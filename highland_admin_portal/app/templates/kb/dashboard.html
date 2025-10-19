@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header mb-4">
+  <h1 class="h2"><i class="bi bi-journal-text"></i> Knowledge Base</h1>
+  <p class="text-muted">Your centralized hub for articles, procedures, and supplier information</p>
+</div>
+
+<!-- Search Bar -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-body">
+        <form action="{{ url_for('kb_articles.list_articles') }}" method="GET">
+          <div class="input-group input-group-lg">
+            <span class="input-group-text bg-transparent border-end-0">
+              <i class="bi bi-search"></i>
+            </span>
+            <input type="text"
+                   class="form-control border-start-0"
+                   name="search"
+                   placeholder="Search articles by title, content, or tags..."
+                   value="{{ request.args.get('search', '') }}">
+            <button class="btn btn-primary" type="submit">
+              <i class="bi bi-search"></i> Search
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row mb-4">
+  <div class="col-md-3 mb-3">
+    <div class="card">
+      <div class="card-body text-center">
+        <i class="bi bi-journal-text" style="font-size: 2rem; color: var(--primary-blue);"></i>
+        <h3 class="mt-2 mb-0">{{ total_articles }}</h3>
+        <p class="text-muted small mb-0">Total Articles</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 mb-3">
+    <div class="card">
+      <div class="card-body text-center">
+        <i class="bi bi-tags" style="font-size: 2rem; color: var(--primary-blue);"></i>
+        <h3 class="mt-2 mb-0">{{ total_categories }}</h3>
+        <p class="text-muted small mb-0">Categories</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 mb-3">
+    <div class="card">
+      <div class="card-body text-center">
+        <i class="bi bi-truck" style="font-size: 2rem; color: var(--primary-blue);"></i>
+        <h3 class="mt-2 mb-0">{{ total_suppliers }}</h3>
+        <p class="text-muted small mb-0">Suppliers</p>
+      </div>
+    </div>
+  </div>
+  {% if current_user.role == 'admin' %}
+  <div class="col-md-3 mb-3">
+    <div class="card border-warning">
+      <div class="card-body text-center">
+        <i class="bi bi-clock-history" style="font-size: 2rem; color: #ffc107;"></i>
+        <h3 class="mt-2 mb-0">{{ pending_articles }}</h3>
+        <p class="text-muted small mb-0">Pending Approval</p>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-lightning-fill"></i> Quick Actions</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <a href="{{ url_for('kb_articles.list_articles') }}" class="btn btn-outline-primary w-100">
+              <i class="bi bi-journal-text"></i> Browse Articles
+            </a>
+          </div>
+          {% if current_user.role in ['staff', 'admin'] %}
+          <div class="col-md-4 mb-3">
+            <a href="{{ url_for('kb_articles.new_article') }}" class="btn btn-primary w-100">
+              <i class="bi bi-plus-circle"></i> Create Article
+            </a>
+          </div>
+          {% endif %}
+          <div class="col-md-4 mb-3">
+            <a href="{{ url_for('kb_suppliers.list_suppliers') }}" class="btn btn-outline-primary w-100">
+              <i class="bi bi-truck"></i> View Suppliers
+            </a>
+          </div>
+          <div class="col-md-4 mb-3">
+            <a href="{{ url_for('kb_categories.list_categories') }}" class="btn btn-outline-primary w-100">
+              <i class="bi bi-tags"></i> Browse Categories
+            </a>
+          </div>
+          {% if current_user.role in ['staff', 'admin'] %}
+          <div class="col-md-4 mb-3">
+            <a href="{{ url_for('kb_suppliers.new_supplier') }}" class="btn btn-outline-primary w-100">
+              <i class="bi bi-plus-circle"></i> Add Supplier
+            </a>
+          </div>
+          {% endif %}
+          {% if current_user.role == 'admin' %}
+          <div class="col-md-4 mb-3">
+            <a href="{{ url_for('kb_articles.admin_approvals') }}" class="btn btn-warning w-100">
+              <i class="bi bi-check-circle"></i> Approve Articles
+            </a>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent and Popular Articles -->
+<div class="row">
+  <!-- Recent Articles -->
+  <div class="col-md-6 mb-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-clock"></i> Recent Articles</h5>
+      </div>
+      <div class="card-body">
+        {% if recent_articles %}
+        <div class="list-group list-group-flush">
+          {% for article in recent_articles %}
+          <a href="{{ url_for('kb_articles.view_article', article_id=article.id) }}"
+             class="list-group-item list-group-item-action">
+            <div class="d-flex justify-content-between align-items-start">
+              <div class="flex-grow-1">
+                <h6 class="mb-1">{{ article.title }}</h6>
+                <p class="text-muted small mb-1">
+                  <i class="bi bi-person"></i> {{ article.author.full_name }}
+                  {% if article.category %}
+                  • <i class="bi bi-tag"></i> {{ article.category.name }}
+                  {% endif %}
+                </p>
+                <small class="text-muted">
+                  <i class="bi bi-calendar"></i> {{ article.created_at.strftime('%b %d, %Y') }}
+                </small>
+              </div>
+              <span class="badge bg-primary">{{ article.view_count }} views</span>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">No articles yet.</p>
+        {% endif %}
+      </div>
+      <div class="card-footer">
+        <a href="{{ url_for('kb_articles.list_articles') }}" class="btn btn-sm btn-outline-primary">
+          View All Articles <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Popular Articles -->
+  <div class="col-md-6 mb-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-star-fill"></i> Popular Articles</h5>
+      </div>
+      <div class="card-body">
+        {% if popular_articles %}
+        <div class="list-group list-group-flush">
+          {% for article in popular_articles %}
+          <a href="{{ url_for('kb_articles.view_article', article_id=article.id) }}"
+             class="list-group-item list-group-item-action">
+            <div class="d-flex justify-content-between align-items-start">
+              <div class="flex-grow-1">
+                <h6 class="mb-1">{{ article.title }}</h6>
+                <p class="text-muted small mb-1">
+                  <i class="bi bi-person"></i> {{ article.author.full_name }}
+                  {% if article.category %}
+                  • <i class="bi bi-tag"></i> {{ article.category.name }}
+                  {% endif %}
+                </p>
+                <small class="text-muted">
+                  <i class="bi bi-calendar"></i> {{ article.created_at.strftime('%b %d, %Y') }}
+                </small>
+              </div>
+              <span class="badge bg-success">{{ article.view_count }} views</span>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">No articles yet.</p>
+        {% endif %}
+      </div>
+      <div class="card-footer">
+        <a href="{{ url_for('kb_articles.list_articles') }}" class="btn btn-sm btn-outline-primary">
+          View All Articles <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Categories Overview -->
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-tags-fill"></i> Browse by Category</h5>
+      </div>
+      <div class="card-body">
+        {% if categories %}
+        <div class="row">
+          {% for category in categories %}
+          <div class="col-md-4 col-lg-3 mb-3">
+            <a href="{{ url_for('kb_articles.list_articles', category_id=category.id) }}"
+               class="btn btn-outline-secondary w-100 text-start">
+              <i class="bi bi-tag-fill"></i> {{ category.name }}
+              <span class="badge bg-primary float-end">{{ category.article_count }}</span>
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">No categories yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

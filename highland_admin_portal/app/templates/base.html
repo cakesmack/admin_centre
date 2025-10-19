@@ -1,0 +1,1975 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ title }}</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <!-- Navigation Sidebar -->
+    <nav class="nav-sidebar" id="navSidebar">
+      <div class="nav-sidebar-header">
+        <a href="{{ url_for('main.dashboard') }}" class="nav-sidebar-brand">
+          <i class="bi bi-building-fill me-2"></i>
+          Hygiene & Catering
+        </a>
+        <li class="nav-item dropdown" style="display: block">
+          <text>Welcome</text>
+          <a
+            class="nav-link dropdown-toggle"
+            href="#"
+            id="userDropdown"
+            role="button"
+            data-bs-toggle="dropdown"
+          >
+            <i class="fas"></i> {{ current_user.full_name or
+            current_user.username }}
+          </a>
+          <ul class="dropdown-menu">
+            <li>
+              <a
+                class="dropdown-item"
+                href="{{ url_for('main.user_profile', user_id=current_user.id) }}"
+              >
+                <i class="fas fa-user"></i> My Profile
+              </a>
+            </li>
+            <li>
+              <a
+                class="dropdown-item"
+                href="{{ url_for('auth.change_password') }}"
+              >
+                <i class="fas fa-key"></i> Change Password
+              </a>
+            </li>
+            <li><hr class="dropdown-divider" /></li>
+            <li>
+              <a class="dropdown-item" href="{{ url_for('auth.logout') }}">
+                <i class="fas fa-sign-out-alt"></i> Logout
+              </a>
+            </li>
+          </ul>
+        </li>
+      </div>
+
+      <!-- Main Navigation -->
+
+      {% if current_user.is_authenticated %}
+      <div class="nav-sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">Main</div>
+          <div class="nav-item">
+            <a class="nav-link" href="{{ url_for('main.dashboard') }}">
+              <i class="bi bi-speedometer2"></i>
+              Dashboard
+            </a>
+          </div>
+          <div class="nav-item">
+            <a
+              class="nav-link"
+              href="{{ url_for('standing_orders.standing_orders') }}"
+            >
+              <i class="bi bi-arrow-repeat"></i>
+              Standing Orders
+            </a>
+          </div>
+          <div class="nav-item">
+            <a class="nav-link" href="{{ url_for('callsheets.callsheets') }}">
+              <i class="bi bi-telephone-fill"></i>
+              Call Sheets
+            </a>
+          </div>
+          <div class="nav-item">
+            <a
+              class="nav-link"
+              href="{{ url_for('customer_stock.customer_stock') }}"
+            >
+              <i class="bi bi-boxes"></i>
+              Customer Stock
+            </a>
+          </div>
+          <div class="nav-item">
+            <a
+              class="nav-link"
+              href="{{ url_for('clearance_stock.clearance_stock') }}"
+            >
+              <i class="bi bi-boxes"></i>
+              Clearance Stock
+            </a>
+          </div>
+        </div>
+
+        <!-- Forms Section -->
+        <div class="nav-section">
+          <div class="nav-section-title">Forms</div>
+          <div class="nav-item">
+            <a class="nav-link" href="{{ url_for('forms.returns') }}">
+              <i class="bi bi-arrow-return-left"></i>
+              Returns
+            </a>
+          </div>
+          <div class="nav-item">
+            <a
+              class="nav-link"
+              href="{{ url_for('customer_stock.branded_stock') }}"
+            >
+              <i class="bi bi-bag-check"></i>
+              Customer's Own Stock
+            </a>
+          </div>
+          <div class="nav-item">
+            <a class="nav-link" href="{{ url_for('forms.invoice_correction') }}">
+              <i class="bi bi-receipt-cutoff"></i>
+              Invoiced Goods
+            </a>
+          </div>
+          <div class="nav-item">
+            <a class="nav-link" href="{{ url_for('forms.list_forms') }}">
+              <i class="bi bi-file-earmark-text"></i>
+              View All Forms
+            </a>
+          </div>
+        </div>
+
+        <!-- Knowledge Base Section -->
+        <div class="nav-section">
+          <div class="nav-section-title">Knowledge Base</div>
+          <div class="nav-item">
+            <a class="nav-link" href="{{ url_for('kb_articles.kb_dashboard') }}">
+              <i class="bi bi-house-door"></i>
+              KB Home
+            </a>
+          </div>
+          <div class="nav-item">
+            <a class="nav-link" href="{{ url_for('kb_articles.list_articles') }}">
+              <i class="bi bi-journal-text"></i>
+              Articles
+            </a>
+          </div>
+          <div class="nav-item">
+            <a class="nav-link" href="{{ url_for('kb_categories.list_categories') }}">
+              <i class="bi bi-tags"></i>
+              Categories
+            </a>
+          </div>
+          <div class="nav-item">
+            <a class="nav-link" href="{{ url_for('kb_suppliers.list_suppliers') }}">
+              <i class="bi bi-truck"></i>
+              Suppliers
+            </a>
+          </div>
+          {% if current_user.role == 'admin' %}
+          <div class="nav-item">
+            <a class="nav-link" href="{{ url_for('kb_articles.admin_approvals') }}">
+              <i class="bi bi-check-circle"></i>
+              Approvals
+            </a>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Tools Section -->
+        <div class="nav-section">
+          <div class="nav-section-title">Tools</div>
+          <div class="nav-item">
+            <a class="nav-link" href="#" onclick="showContacts()">
+              <i class="bi bi-people-fill"></i>
+              Staff Contacts
+            </a>
+          </div>
+          <div class="nav-item">
+            <a class="nav-link" href="#" onclick="showCustomerDirectory()">
+              <i class="bi bi-building"></i>
+              Customer Directory
+            </a>
+          </div>
+          <div class="nav-item">
+            <a class="nav-link" href="#" onclick="showMarginCalculator()">
+              <i class="bi bi-calculator"></i>
+              Margin Calculator
+            </a>
+          </div>
+          <div class="nav-item">
+            <a class="nav-link" href="#" onclick="showTodoModal()">
+              <i class="bi bi-check2-square"></i>
+              My Todo List
+            </a>
+          </div>
+          <div class="nav-item">
+            <a class="nav-link" href="#" onclick="showUnitConverter()">
+              <i class="bi bi-arrows-expand"></i>
+              Unit Converter
+            </a>
+          </div>
+        </div>
+        {% if current_user.role == 'admin' %}
+        <!-- Admin Section -->
+        <div class="nav-section">
+          <div class="nav-section-title">Admin</div>
+          <div class="nav-item">
+            <a class="nav-link" href="{{ url_for('admin.dashboard') }}">
+              <i class="bi bi-shield-lock-fill"></i>
+              Admin Dashboard
+            </a>
+          </div>
+          <div class="nav-item">
+            <a class="nav-link" href="{{ url_for('main.users') }}">
+              <i class="bi bi-people-fill"></i>
+              User Management
+            </a>
+          </div>
+          <div class="nav-item">
+            <a class="nav-link" href="{{ url_for('admin.reports') }}">
+              <i class="bi bi-graph-up-arrow"></i>
+              Reports & Analytics
+            </a>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      {% endif %}
+    </nav>
+
+    <!-- Top navbar for mobile -->
+    <nav class="top-navbar" id="topNavbar">
+      <li class="nav-item dropdown">
+        <a
+          class="nav-link dropdown-toggle"
+          href="#"
+          id="userDropdown"
+          role="button"
+          data-bs-toggle="dropdown"
+        >
+          <i class="fas fa-user"></i> {{ current_user.full_name or
+          current_user.username }}
+        </a>
+        <ul class="dropdown-menu">
+          <li>
+            <a
+              class="dropdown-item"
+              href="{{ url_for('main.user_profile', user_id=current_user.id) }}"
+            >
+              <i class="fas fa-user"></i> My Profile
+            </a>
+          </li>
+          <li>
+            <a
+              class="dropdown-item"
+              href="{{ url_for('auth.change_password') }}"
+            >
+              <i class="fas fa-key"></i> Change Password
+            </a>
+          </li>
+          <li><hr class="dropdown-divider" /></li>
+          <li>
+            <a class="dropdown-item" href="{{ url_for('auth.logout') }}">
+              <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+          </li>
+        </ul>
+      </li>
+    </nav>
+
+    <!-- Sidebar overlay for mobile -->
+    <div
+      class="nav-sidebar-overlay"
+      id="navSidebarOverlay"
+      onclick="closeSidebar()"
+    ></div>
+
+    <!-- Margin Calculator Modal -->
+    <div class="modal fade" id="marginCalculatorModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="bi bi-calculator"></i> Margin Calculator
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Cost Price (£)</label>
+              <input
+                type="number"
+                class="form-control"
+                id="costPrice"
+                step="0.01"
+                placeholder="Enter cost price"
+                onkeyup="calculateFromCost()"
+              />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Desired Margin (%)</label>
+              <input
+                type="number"
+                class="form-control"
+                id="desiredMargin"
+                step="0.1"
+                placeholder="Enter desired margin"
+                onkeyup="calculateFromMargin()"
+              />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Selling Price (£)</label>
+              <input
+                type="number"
+                class="form-control"
+                id="sellingPrice"
+                step="0.01"
+                placeholder="Calculated selling price"
+                readonly
+                style="background-color: #f8f9fa"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Todo List Modal -->
+    <div class="modal fade" id="todoModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="bi bi-check2-square"></i> My Todo List
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div id="todoList"></div>
+            <div class="input-group mt-3">
+              <input
+                type="text"
+                class="form-control"
+                id="newTodoInput"
+                placeholder="Add new task..."
+                onkeypress="if(event.key==='Enter') addTodo()"
+              />
+              <button class="btn btn-success" onclick="addTodo()">
+                <i class="bi bi-plus"></i> Add
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Unit Converter Modal -->
+    <div class="modal fade" id="unitConverterModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="bi bi-arrows-expand"></i> Unit Converter
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <!-- Length Converter -->
+            <div class="card mb-3">
+              <div class="card-header">
+                <h6 class="mb-0">
+                  <i class="bi bi-rulers"></i> Length / Distance
+                </h6>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-5">
+                    <div class="input-group">
+                      <input
+                        type="number"
+                        class="form-control"
+                        id="lengthFrom"
+                        placeholder="Enter value"
+                        onkeyup="convertLength()"
+                      />
+                      <select
+                        class="form-select"
+                        id="lengthFromUnit"
+                        onchange="convertLength()"
+                      >
+                        <option value="mm">mm</option>
+                        <option value="cm" selected>cm</option>
+                        <option value="m">m</option>
+                        <option value="in">in</option>
+                        <option value="ft">ft</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div
+                    class="col-md-2 text-center d-flex align-items-center justify-content-center"
+                  >
+                    <i class="bi bi-arrow-left-right"></i>
+                  </div>
+                  <div class="col-md-5">
+                    <div class="input-group">
+                      <input
+                        type="number"
+                        class="form-control"
+                        id="lengthTo"
+                        readonly
+                        style="background-color: #f8f9fa"
+                      />
+                      <select
+                        class="form-select"
+                        id="lengthToUnit"
+                        onchange="convertLength()"
+                      >
+                        <option value="mm">mm</option>
+                        <option value="cm">cm</option>
+                        <option value="m">m</option>
+                        <option value="in" selected>in</option>
+                        <option value="ft">ft</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Volume Converter -->
+            <div class="card mb-3">
+              <div class="card-header">
+                <h6 class="mb-0">
+                  <i class="bi bi-droplet"></i> Volume / Capacity
+                </h6>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-5">
+                    <div class="input-group">
+                      <input
+                        type="number"
+                        class="form-control"
+                        id="volumeFrom"
+                        placeholder="Enter value"
+                        onkeyup="convertVolume()"
+                      />
+                      <select
+                        class="form-select"
+                        id="volumeFromUnit"
+                        onchange="convertVolume()"
+                      >
+                        <option value="ml" selected>ml</option>
+                        <option value="l">l</option>
+                        <option value="floz">fl oz</option>
+                        <option value="cup">cups</option>
+                        <option value="pint">pints</option>
+                        <option value="gal">gal</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div
+                    class="col-md-2 text-center d-flex align-items-center justify-content-center"
+                  >
+                    <i class="bi bi-arrow-left-right"></i>
+                  </div>
+                  <div class="col-md-5">
+                    <div class="input-group">
+                      <input
+                        type="number"
+                        class="form-control"
+                        id="volumeTo"
+                        readonly
+                        style="background-color: #f8f9fa"
+                      />
+                      <select
+                        class="form-select"
+                        id="volumeToUnit"
+                        onchange="convertVolume()"
+                      >
+                        <option value="ml">ml</option>
+                        <option value="l">l</option>
+                        <option value="floz" selected>fl oz</option>
+                        <option value="cup">cups</option>
+                        <option value="pint">pints</option>
+                        <option value="gal">gal</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Weight Converter -->
+            <div class="card">
+              <div class="card-header">
+                <h6 class="mb-0">
+                  <i class="bi bi-speedometer"></i> Weight / Mass
+                </h6>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-5">
+                    <div class="input-group">
+                      <input
+                        type="number"
+                        class="form-control"
+                        id="weightFrom"
+                        placeholder="Enter value"
+                        onkeyup="convertWeight()"
+                      />
+                      <select
+                        class="form-select"
+                        id="weightFromUnit"
+                        onchange="convertWeight()"
+                      >
+                        <option value="g" selected>g</option>
+                        <option value="kg">kg</option>
+                        <option value="oz">oz</option>
+                        <option value="lb">lb</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div
+                    class="col-md-2 text-center d-flex align-items-center justify-content-center"
+                  >
+                    <i class="bi bi-arrow-left-right"></i>
+                  </div>
+                  <div class="col-md-5">
+                    <div class="input-group">
+                      <input
+                        type="number"
+                        class="form-control"
+                        id="weightTo"
+                        readonly
+                        style="background-color: #f8f9fa"
+                      />
+                      <select
+                        class="form-select"
+                        id="weightToUnit"
+                        onchange="convertWeight()"
+                      >
+                        <option value="g">g</option>
+                        <option value="kg">kg</option>
+                        <option value="oz" selected>oz</option>
+                        <option value="lb">lb</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              onclick="clearAllConverters()"
+            >
+              <i class="bi bi-arrow-clockwise"></i> Clear All
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Staff Contacts Modal -->
+    <div class="modal fade" id="contactsModal" tabindex="-1">
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="bi bi-people-fill"></i> Staff Contacts
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div class="row">
+              <!-- Staff List -->
+              <div class="col-md-4">
+                <div class="input-group mb-3">
+                  <span class="input-group-text"
+                    ><i class="bi bi-search"></i
+                  ></span>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="contactSearch"
+                    placeholder="Search staff..."
+                    onkeyup="filterContacts()"
+                  />
+                </div>
+                <div id="staffList" class="list-group">
+                  <!-- Staff members will be loaded here -->
+                </div>
+              </div>
+
+              <!-- Staff Details -->
+              <div class="col-md-8">
+                <div id="staffDetails">
+                  <div class="text-center text-muted py-5">
+                    <i class="bi bi-person-circle" style="font-size: 3rem"></i>
+                    <p class="mt-3">
+                      Select a staff member to view their contact details
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Customer Directory Modal -->
+    <div class="modal fade" id="customerDirectoryModal" tabindex="-1">
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="bi bi-building"></i> Customer Directory
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div class="row">
+              <!-- Customer List -->
+              <div class="col-md-4">
+                <div class="d-flex gap-2 mb-3">
+                  <div class="input-group flex-grow-1">
+                    <span class="input-group-text"
+                      ><i class="bi bi-search"></i
+                    ></span>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="customerSearch"
+                      placeholder="Search customers..."
+                      onkeyup="filterCustomers()"
+                    />
+                  </div>
+                  <button
+                    class="btn btn-success"
+                    onclick="showAddCustomerForm()"
+                  >
+                    <i class="bi bi-plus"></i>
+                  </button>
+                </div>
+                <div
+                  id="customerList"
+                  class="list-group"
+                  style="max-height: 500px; overflow-y: auto"
+                >
+                  <!-- Customers will be loaded here -->
+                </div>
+              </div>
+
+              <!-- Customer Details/Form -->
+              <div class="col-md-8">
+                <div id="customerDetails">
+                  <div class="text-center text-muted py-5">
+                    <i class="bi bi-building" style="font-size: 3rem"></i>
+                    <p class="mt-3">
+                      Select a customer to view their details, or click + to add
+                      a new customer
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="main-content" id="mainContent">
+      <div class="container-fluid">
+        {% with messages = get_flashed_messages(with_categories=true) %} {% if
+        messages %} {% for category, message in messages %}
+        <div
+          class="alert alert-{{ category }} alert-dismissible fade show"
+          role="alert"
+        >
+          {{ message }}
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="alert"
+          ></button>
+        </div>
+        {% endfor %} {% endif %} {% endwith %} {% block content %}{% endblock %}
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+      function showMarginCalculator() {
+        new bootstrap.Modal(
+          document.getElementById("marginCalculatorModal")
+        ).show();
+      }
+
+      function showTodoModal() {
+        loadTodos();
+        new bootstrap.Modal(document.getElementById("todoModal")).show();
+      }
+
+      function showUnitConverter() {
+        new bootstrap.Modal(
+          document.getElementById("unitConverterModal")
+        ).show();
+      }
+
+      function calculateFromCost() {
+        const cost =
+          parseFloat(document.getElementById("costPrice").value) || 0;
+        const margin =
+          parseFloat(document.getElementById("desiredMargin").value) || 0;
+        if (cost > 0 && margin > 0) {
+          const sellingPrice = cost / (1 - margin / 100);
+          document.getElementById("sellingPrice").value =
+            sellingPrice.toFixed(2);
+        }
+      }
+
+      function calculateFromMargin() {
+        calculateFromCost();
+      }
+
+      async function loadTodos() {
+        try {
+          const response = await fetch("/api/todos");
+          const todos = await response.json();
+          const todoList = document.getElementById("todoList");
+          todoList.innerHTML = "";
+          todos.forEach((todo) => {
+            const todoItem = document.createElement("div");
+            todoItem.className = `todo-item ${
+              todo.completed ? "completed" : ""
+            }`;
+            todoItem.innerHTML = `
+              <input type="checkbox" ${
+                todo.completed ? "checked" : ""
+              } onchange="toggleTodo(${todo.id})">
+              <span style="flex: 1">${todo.text}</span>
+              <button class="btn btn-sm btn-danger" onclick="deleteTodo(${
+                todo.id
+              })"><i class="bi bi-trash"></i></button>
+            `;
+            todoList.appendChild(todoItem);
+          });
+        } catch (error) {
+          console.error("Error loading todos:", error);
+        }
+      }
+
+      async function addTodo() {
+        const input = document.getElementById("newTodoInput");
+        const text = input.value.trim();
+        if (text) {
+          try {
+            const response = await fetch("/api/todos", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ text: text }),
+            });
+            if (response.ok) {
+              loadTodos();
+              input.value = "";
+            }
+          } catch (error) {
+            console.error("Error adding todo:", error);
+          }
+        }
+      }
+
+      async function toggleTodo(id) {
+        try {
+          await fetch(`/api/todos/${id}/toggle`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+          });
+          loadTodos();
+        } catch (error) {
+          console.error("Error toggling todo:", error);
+        }
+      }
+
+      async function deleteTodo(id) {
+        if (confirm("Delete this task?")) {
+          try {
+            await fetch(`/api/todos/${id}`, {
+              method: "DELETE",
+              headers: { "Content-Type": "application/json" },
+            });
+            loadTodos();
+          } catch (error) {
+            console.error("Error deleting todo:", error);
+          }
+        }
+      }
+
+      function convertLength() {
+        const fromValue =
+          parseFloat(document.getElementById("lengthFrom").value) || 0;
+        const fromUnit = document.getElementById("lengthFromUnit").value;
+        const toUnit = document.getElementById("lengthToUnit").value;
+
+        if (fromValue === 0) {
+          document.getElementById("lengthTo").value = "";
+          return;
+        }
+
+        let mmValue;
+        switch (fromUnit) {
+          case "mm":
+            mmValue = fromValue;
+            break;
+          case "cm":
+            mmValue = fromValue * 10;
+            break;
+          case "m":
+            mmValue = fromValue * 1000;
+            break;
+          case "in":
+            mmValue = fromValue * 25.4;
+            break;
+          case "ft":
+            mmValue = fromValue * 304.8;
+            break;
+        }
+
+        let result;
+        switch (toUnit) {
+          case "mm":
+            result = mmValue;
+            break;
+          case "cm":
+            result = mmValue / 10;
+            break;
+          case "m":
+            result = mmValue / 1000;
+            break;
+          case "in":
+            result = mmValue / 25.4;
+            break;
+          case "ft":
+            result = mmValue / 304.8;
+            break;
+        }
+
+        document.getElementById("lengthTo").value = parseFloat(
+          result.toFixed(4)
+        );
+      }
+
+      function convertVolume() {
+        const fromValue =
+          parseFloat(document.getElementById("volumeFrom").value) || 0;
+        const fromUnit = document.getElementById("volumeFromUnit").value;
+        const toUnit = document.getElementById("volumeToUnit").value;
+
+        if (fromValue === 0) {
+          document.getElementById("volumeTo").value = "";
+          return;
+        }
+
+        let mlValue;
+        switch (fromUnit) {
+          case "ml":
+            mlValue = fromValue;
+            break;
+          case "l":
+            mlValue = fromValue * 1000;
+            break;
+          case "floz":
+            mlValue = fromValue * 29.5735;
+            break;
+          case "cup":
+            mlValue = fromValue * 236.588;
+            break;
+          case "pint":
+            mlValue = fromValue * 473.176;
+            break;
+          case "gal":
+            mlValue = fromValue * 3785.41;
+            break;
+        }
+
+        let result;
+        switch (toUnit) {
+          case "ml":
+            result = mlValue;
+            break;
+          case "l":
+            result = mlValue / 1000;
+            break;
+          case "floz":
+            result = mlValue / 29.5735;
+            break;
+          case "cup":
+            result = mlValue / 236.588;
+            break;
+          case "pint":
+            result = mlValue / 473.176;
+            break;
+          case "gal":
+            result = mlValue / 3785.41;
+            break;
+        }
+
+        document.getElementById("volumeTo").value = parseFloat(
+          result.toFixed(4)
+        );
+      }
+
+      function convertWeight() {
+        const fromValue =
+          parseFloat(document.getElementById("weightFrom").value) || 0;
+        const fromUnit = document.getElementById("weightFromUnit").value;
+        const toUnit = document.getElementById("weightToUnit").value;
+
+        if (fromValue === 0) {
+          document.getElementById("weightTo").value = "";
+          return;
+        }
+
+        let gValue;
+        switch (fromUnit) {
+          case "g":
+            gValue = fromValue;
+            break;
+          case "kg":
+            gValue = fromValue * 1000;
+            break;
+          case "oz":
+            gValue = fromValue * 28.3495;
+            break;
+          case "lb":
+            gValue = fromValue * 453.592;
+            break;
+        }
+
+        let result;
+        switch (toUnit) {
+          case "g":
+            result = gValue;
+            break;
+          case "kg":
+            result = gValue / 1000;
+            break;
+          case "oz":
+            result = gValue / 28.3495;
+            break;
+          case "lb":
+            result = gValue / 453.592;
+            break;
+        }
+
+        document.getElementById("weightTo").value = parseFloat(
+          result.toFixed(4)
+        );
+      }
+
+      function clearAllConverters() {
+        document.getElementById("lengthFrom").value = "";
+        document.getElementById("lengthTo").value = "";
+        document.getElementById("volumeFrom").value = "";
+        document.getElementById("volumeTo").value = "";
+        document.getElementById("weightFrom").value = "";
+        document.getElementById("weightTo").value = "";
+      }
+
+      function toggleSidebar() {
+        const sidebar = document.getElementById("navSidebar");
+        const overlay = document.getElementById("navSidebarOverlay");
+        const mainContent = document.getElementById("mainContent");
+        if (window.innerWidth <= 768) {
+          sidebar.classList.toggle("show");
+          overlay.classList.toggle("show");
+        } else {
+          sidebar.classList.toggle("collapsed");
+          mainContent.classList.toggle("expanded");
+        }
+      }
+
+      function closeSidebar() {
+        document.getElementById("navSidebar").classList.remove("show");
+        document.getElementById("navSidebarOverlay").classList.remove("show");
+      }
+
+      window.addEventListener("resize", function () {
+        if (window.innerWidth > 768) {
+          document.getElementById("navSidebar").classList.remove("show");
+          document.getElementById("navSidebarOverlay").classList.remove("show");
+        }
+      });
+
+      document.addEventListener("DOMContentLoaded", function () {
+        const currentPath = window.location.pathname;
+        const navLinks = document.querySelectorAll(
+          ".nav-sidebar-nav .nav-link, .nav-section .nav-link"
+        );
+        navLinks.forEach((link) => {
+          if (link.getAttribute("href") === currentPath) {
+            link.classList.add("active");
+          }
+        });
+      });
+
+      document.addEventListener("click", function (event) {
+        const sidebar = document.getElementById("navSidebar");
+        const sidebarToggle = document.querySelector(".sidebar-toggle");
+        if (
+          window.innerWidth <= 768 &&
+          !sidebar.contains(event.target) &&
+          !sidebarToggle.contains(event.target) &&
+          sidebar.classList.contains("show")
+        ) {
+          closeSidebar();
+        }
+      });
+
+      function showContacts() {
+        loadStaffList();
+        new bootstrap.Modal(document.getElementById("contactsModal")).show();
+      }
+
+      async function loadStaffList() {
+        try {
+          const response = await fetch("/api/staff-contacts");
+          const staff = await response.json();
+
+          const staffList = document.getElementById("staffList");
+          staffList.innerHTML = "";
+
+          staff.forEach((person) => {
+            const listItem = document.createElement("a");
+            listItem.href = "#";
+            listItem.className =
+              "list-group-item list-group-item-action staff-item";
+            listItem.onclick = () => showStaffDetails(person.id);
+            listItem.innerHTML = `
+        <div class="d-flex w-100 justify-content-between">
+          <h6 class="mb-1">${person.full_name}</h6>
+          <span class="badge bg-${
+            person.role === "admin" ? "primary" : "secondary"
+          }">${person.role.toUpperCase()}</span>
+        </div>
+        <p class="mb-1">${person.job_title || "No job title"}</p>
+        <small>${person.email}</small>
+      `;
+            staffList.appendChild(listItem);
+          });
+        } catch (error) {
+          console.error("Error loading staff:", error);
+        }
+      }
+
+      async function showStaffDetails(userId) {
+        try {
+          // Remove active class from all items
+          document.querySelectorAll(".staff-item").forEach((item) => {
+            item.classList.remove("active");
+          });
+
+          // Add active class to clicked item
+          event.target.closest(".staff-item").classList.add("active");
+
+          const response = await fetch(`/api/users/${userId}/contact-info`);
+          const user = await response.json();
+
+          const detailsDiv = document.getElementById("staffDetails");
+          detailsDiv.innerHTML = `
+      <div class="card">
+        <div class="card-body">
+          <div class="text-center mb-4">
+            <div class="bg-primary rounded-circle d-inline-flex align-items-center justify-content-center" 
+                 style="width: 80px; height: 80px;">
+              <i class="bi bi-person-fill" style="font-size: 2rem; color: white;"></i>
+            </div>
+            <h4 class="mt-2">${user.full_name}</h4>
+            <h5>
+              ${user.job_title}
+            </h5>
+            ${
+              !user.is_active
+                ? '<span class="badge bg-danger">INACTIVE</span>'
+                : ""
+            }
+          </div>
+          
+          <hr>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <strong><i class="bi bi-envelope-fill"></i> Email:</strong><br>
+                <a href="mailto:${user.email}" class="text-decoration-none">${
+            user.email
+          }</a>
+              </div>
+              
+              ${
+                user.job_title
+                  ? `
+              <div class="mb-3">
+                <strong><i class="bi bi-briefcase-fill"></i> Job Title:</strong><br>
+                <span class="text-muted">${user.job_title}</span>
+              </div>
+              `
+                  : ""
+              }
+            </div>
+            
+            <div class="col-md-6">
+              ${
+                user.direct_phone
+                  ? `
+              <div class="mb-3">
+                <strong><i class="bi bi-telephone-fill"></i> Direct Phone:</strong><br>
+                <a href="tel:${user.direct_phone}" class="text-decoration-none">${user.direct_phone}</a>
+              </div>
+              `
+                  : ""
+              }
+              
+              ${
+                user.mobile_phone
+                  ? `
+              <div class="mb-3">
+                <strong><i class="bi bi-phone-fill"></i> Mobile:</strong><br>
+                <a href="tel:${user.mobile_phone}" class="text-decoration-none">${user.mobile_phone}</a>
+              </div>
+              `
+                  : ""
+              }
+            </div>
+          </div>
+          
+          <hr>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-2">
+                <strong><i class="bi bi-calendar-plus-fill"></i> Member Since:</strong><br>
+                <span class="text-muted">${new Date(
+                  user.created_at
+                ).toLocaleDateString()}</span>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-2">
+                <strong><i class="bi bi-clock-fill"></i> Last Login:</strong><br>
+                <span class="text-muted">
+                  ${
+                    user.last_login
+                      ? new Date(user.last_login).toLocaleString()
+                      : "Never"
+                  }
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+        } catch (error) {
+          console.error("Error loading staff details:", error);
+        }
+      }
+
+      function filterContacts() {
+        const searchTerm = document
+          .getElementById("contactSearch")
+          .value.toLowerCase();
+        const staffItems = document.querySelectorAll(".staff-item");
+
+        staffItems.forEach((item) => {
+          const text = item.textContent.toLowerCase();
+          item.style.display = text.includes(searchTerm) ? "block" : "none";
+        });
+      }
+
+      function showCustomerDirectory() {
+        loadCustomerList();
+        new bootstrap.Modal(
+          document.getElementById("customerDirectoryModal")
+        ).show();
+      }
+
+      let customerListPage = 1;
+      let customerListLoading = false;
+      let customerListHasMore = true;
+      let customerSearchTerm = '';
+
+      async function loadCustomerList(reset = false) {
+        if (customerListLoading) return;
+        if (!reset && !customerListHasMore) return;
+
+        customerListLoading = true;
+
+        if (reset) {
+          customerListPage = 1;
+          customerListHasMore = true;
+        }
+
+        try {
+          const searchParam = customerSearchTerm ? `&search=${encodeURIComponent(customerSearchTerm)}` : '';
+          const response = await fetch(`/customers/api/directory?page=${customerListPage}&per_page=50${searchParam}`);
+          const data = await response.json();
+
+          const customerList = document.getElementById("customerList");
+
+          if (reset) {
+            customerList.innerHTML = "";
+          }
+
+          if (data.customers && data.customers.length > 0) {
+            data.customers.forEach((customer) => {
+              const listItem = document.createElement("a");
+              listItem.href = "#";
+              listItem.className =
+                "list-group-item list-group-item-action customer-item";
+              listItem.onclick = (e) => {
+                e.preventDefault();
+                showCustomerDetails(customer.id, listItem);
+              };
+              listItem.innerHTML = `
+            <div class="d-flex w-100 justify-content-between">
+              <h6 class="mb-1">${customer.name}</h6>
+              <small class="text-muted">${customer.account_number}</small>
+            </div>
+            <p class="mb-1 text-muted">${
+              customer.contact_name || "No contact name"
+            }</p>
+            <small class="text-muted">${customer.phone || "No phone number"}</small>
+          `;
+              customerList.appendChild(listItem);
+            });
+
+            customerListPage++;
+            customerListHasMore = data.has_next;
+
+            // Add "Load More" button if there are more pages
+            if (customerListHasMore) {
+              const loadMoreBtn = document.createElement("button");
+              loadMoreBtn.className = "btn btn-sm btn-outline-primary w-100 mt-2";
+              loadMoreBtn.textContent = `Load More (${data.total} total customers)`;
+              loadMoreBtn.onclick = () => {
+                loadMoreBtn.remove();
+                loadCustomerList(false);
+              };
+              customerList.appendChild(loadMoreBtn);
+            }
+          } else if (reset) {
+            customerList.innerHTML = '<div class="alert alert-info">No customers found</div>';
+          }
+        } catch (error) {
+          console.error("Error loading customers:", error);
+          const customerList = document.getElementById("customerList");
+          if (reset) {
+            customerList.innerHTML =
+              '<div class="alert alert-danger">Error loading customers</div>';
+          }
+        } finally {
+          customerListLoading = false;
+        }
+      }
+
+      async function showCustomerDetails(customerId, clickedElement = null) {
+        try {
+          document.querySelectorAll(".customer-item").forEach((item) => {
+            item.classList.remove("active");
+          });
+
+          if (clickedElement) {
+            clickedElement.classList.add("active");
+          }
+
+          const response = await fetch(`/customers/api/${customerId}`);
+          const customer = await response.json();
+
+          // Normalize customer to have addresses array
+          if (!customer.addresses || customer.addresses.length === 0) {
+            customer.addresses = [
+              {
+                label: "Primary",
+                phone: "",
+                street: customer.address || "",
+                city: "",
+                zip: "",
+              },
+            ];
+          }
+
+          const addressesHtml = customer.addresses
+            .map(
+              (addr, index) => `
+      <div class="card mb-2">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <h6 class="mb-1"><i class="bi bi-geo-alt"></i> ${addr.label}</h6>
+            ${
+              customer.addresses.length > 1
+                ? `<span class="badge bg-primary">Location ${index + 1}</span>`
+                : ""
+            }
+          </div>
+          ${
+            addr.phone
+              ? `<p class="mb-1"><i class="bi bi-telephone"></i> ${addr.phone}</p>`
+              : ""
+          }
+          <p class="mb-0 text-muted">
+            ${addr.street ? addr.street + "<br>" : ""}
+            ${addr.city ? addr.city + ", " : ""}${addr.zip || ""}
+          </p>
+        </div>
+      </div>
+    `
+            )
+            .join("");
+
+          const detailsDiv = document.getElementById("customerDetails");
+          detailsDiv.innerHTML = `
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">${customer.name}</h5>
+          <button class="btn btn-sm btn-primary" onclick="showEditCustomerForm(${
+            customer.id
+          })">
+            <i class="bi bi-pencil"></i> Edit
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <p><strong>Account Number:</strong><br>${
+                customer.account_number
+              }</p>
+            </div>
+            <div class="col-md-6">
+              <p><strong>Main Phone:</strong><br>${
+                customer.phone || "Not specified"
+              }</p>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <p><strong>Contact Person:</strong><br>${
+                customer.contact_name || "Not specified"
+              }</p>
+            </div>
+            <div class="col-md-6">
+              <p><strong>Email:</strong><br>${
+                customer.email || "Not specified"
+              }</p>
+            </div>
+          </div>
+          
+          <hr>
+          <h6 class="mb-3">Delivery Locations (${
+            customer.addresses.length
+          })</h6>
+          ${addressesHtml}
+          
+          ${
+            customer.notes
+              ? `
+          <hr>
+          <div class="alert alert-info mb-0">
+            <strong>Notes:</strong><br>${customer.notes}
+          </div>
+          `
+              : ""
+          }
+        </div>
+      </div>
+    `;
+        } catch (error) {
+          console.error("Error loading customer:", error);
+          alert("Error loading customer details");
+        }
+      }
+
+      function showAddCustomerForm() {
+        const detailsDiv = document.getElementById("customerDetails");
+        detailsDiv.innerHTML = `
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-plus"></i> Add New Customer</h5>
+      </div>
+      <div class="card-body">
+        <form id="newCustomerForm">
+          <h6 class="mb-3">Basic Information</h6>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Account Number *</label>
+              <input type="text" class="form-control" id="newAccountNumber" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Company Name *</label>
+              <input type="text" class="form-control" id="newCompanyName" required>
+            </div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Contact Person</label>
+              <input type="text" class="form-control" id="newContactName">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Main Phone Number</label>
+              <input type="text" class="form-control" id="newPhone">
+              <small class="text-muted">Primary contact number for this account</small>
+            </div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-12 mb-3">
+              <label class="form-label">Email</label>
+              <input type="email" class="form-control" id="newEmail">
+            </div>
+          </div>
+          
+          <hr>
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="mb-0">Delivery Locations</h6>
+            <button type="button" class="btn btn-sm btn-success" onclick="addAddressField()">
+              <i class="bi bi-plus"></i> Add Location
+            </button>
+          </div>
+          
+          <div id="addressesContainer">
+            <div class="address-block card mb-3" data-address-index="0">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <h6 class="mb-0">Location 1</h6>
+                </div>
+                
+                <div class="mb-3">
+                  <label class="form-label">Location Name *</label>
+                  <input type="text" class="form-control address-label" placeholder="e.g., Morangie House, Mansfield Castle" required>
+                  <small class="text-muted">This name will appear on callsheets and forms</small>
+                </div>
+                
+                <div class="mb-3">
+                  <label class="form-label">Phone Number</label>
+                  <input type="text" class="form-control address-phone" placeholder="Phone for this location">
+                </div>
+                
+                <div class="mb-3">
+                  <label class="form-label">Street Address</label>
+                  <input type="text" class="form-control address-street" placeholder="123 Main Street">
+                </div>
+                
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">City/Town</label>
+                    <input type="text" class="form-control address-city" placeholder="Inverness">
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">Postcode</label>
+                    <input type="text" class="form-control address-zip" placeholder="IV1 1XX">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Notes</label>
+            <textarea class="form-control" id="newNotes" rows="3"></textarea>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-success" onclick="saveNewCustomer()">
+              <i class="bi bi-check"></i> Save Customer
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="loadCustomerList(); showCustomerDirectory();">
+              <i class="bi bi-x"></i> Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+      }
+
+      async function saveEditedCustomer() {
+        const customerId = document.getElementById("editCustomerId").value;
+
+        // Collect addresses
+        const addresses = [];
+        document.querySelectorAll(".address-block").forEach((block) => {
+          const label = block.querySelector(".address-label").value.trim();
+          if (!label) {
+            alert("Please provide a location name for all addresses");
+            throw new Error("Missing address label");
+          }
+
+          addresses.push({
+            label: label,
+            street: block.querySelector(".address-street").value,
+            city: block.querySelector(".address-city").value,
+            state: block.querySelector(".address-state").value,
+            zip: block.querySelector(".address-zip").value,
+            country: block.querySelector(".address-country").value,
+          });
+        });
+
+        if (addresses.length === 0) {
+          alert("Please add at least one address");
+          return;
+        }
+
+        const data = {
+          account_number: document.getElementById("editAccountNumber").value,
+          name: document.getElementById("editCompanyName").value,
+          contact_name: document.getElementById("editContactName").value,
+          phone: document.getElementById("editPhone").value,
+          email: document.getElementById("editEmail").value,
+          addresses: addresses,
+          notes: document.getElementById("editNotes").value,
+        };
+
+        try {
+          const response = await fetch(`/api/customer/${customerId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+
+          const result = await response.json();
+          if (result.success) {
+            alert("Customer updated successfully");
+            showCustomerDetails(customerId);
+            loadCustomerList();
+          } else {
+            alert("Error: " + result.message);
+          }
+        } catch (error) {
+          alert("Error updating customer: " + error.message);
+        }
+      }
+
+      async function showEditCustomerForm(customerId) {
+        try {
+          const response = await fetch(`/customers/api/${customerId}`);
+          if (!response.ok) {
+            throw new Error("Failed to fetch customer data");
+          }
+
+          const customer = await response.json();
+
+          // Normalize customer to have addresses array
+          if (!customer.addresses || customer.addresses.length === 0) {
+            customer.addresses = [
+              {
+                label: "Primary",
+                phone: "",
+                street: customer.address || "",
+                city: "",
+                zip: "",
+              },
+            ];
+          }
+
+          const detailsDiv = document.getElementById("customerDetails");
+          detailsDiv.innerHTML = `
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="bi bi-pencil"></i> Edit Customer</h5>
+        </div>
+        <div class="card-body">
+          <form id="editCustomerForm">
+            <input type="hidden" id="editCustomerId" value="${customer.id}">
+            
+            <h6 class="mb-3">Basic Information</h6>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Account Number *</label>
+                <input type="text" class="form-control" id="editAccountNumber" value="${
+                  customer.account_number
+                }" required>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Company Name *</label>
+                <input type="text" class="form-control" id="editCompanyName" value="${
+                  customer.name
+                }" required>
+              </div>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Contact Person</label>
+                <input type="text" class="form-control" id="editContactName" value="${
+                  customer.contact_name || ""
+                }">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Main Phone Number</label>
+                <input type="text" class="form-control" id="editPhone" value="${
+                  customer.phone || ""
+                }">
+                <small class="text-muted">Primary contact number for this account</small>
+              </div>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-12 mb-3">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-control" id="editEmail" value="${
+                  customer.email || ""
+                }">
+              </div>
+            </div>
+            
+            <hr>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h6 class="mb-0">Delivery Locations</h6>
+              <button type="button" class="btn btn-sm btn-success" onclick="addAddressField()">
+                <i class="bi bi-plus"></i> Add Location
+              </button>
+            </div>
+            
+            <div id="addressesContainer">
+              ${customer.addresses
+                .map(
+                  (addr, index) => `
+                <div class="address-block card mb-3" data-address-index="${index}">
+                  <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                      <h6 class="mb-0">Location ${index + 1}</h6>
+                      ${
+                        customer.addresses.length > 1
+                          ? `
+                        <button type="button" class="btn btn-sm btn-danger" onclick="removeAddressField(this)">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      `
+                          : ""
+                      }
+                    </div>
+                    
+                    <div class="mb-3">
+                      <label class="form-label">Location Name *</label>
+                      <input type="text" class="form-control address-label" value="${
+                        addr.label
+                      }" placeholder="e.g., Morangie House, Mansfield Castle" required>
+                      <small class="text-muted">This name will appear on callsheets and forms</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                      <label class="form-label">Phone Number</label>
+                      <input type="text" class="form-control address-phone" value="${
+                        addr.phone || ""
+                      }" placeholder="Phone for this location">
+                    </div>
+                    
+                    <div class="mb-3">
+                      <label class="form-label">Street Address</label>
+                      <input type="text" class="form-control address-street" value="${
+                        addr.street || ""
+                      }" placeholder="123 Main Street">
+                    </div>
+                    
+                    <div class="row">
+                      <div class="col-md-6 mb-3">
+                        <label class="form-label">City/Town</label>
+                        <input type="text" class="form-control address-city" value="${
+                          addr.city || ""
+                        }" placeholder="Inverness">
+                      </div>
+                      <div class="col-md-6 mb-3">
+                        <label class="form-label">Postcode</label>
+                        <input type="text" class="form-control address-zip" value="${
+                          addr.zip || ""
+                        }" placeholder="IV1 1XX">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              `
+                )
+                .join("")}
+            </div>
+            
+            <div class="mb-3">
+              <label class="form-label">Notes</label>
+              <textarea class="form-control" id="editNotes" rows="3">${
+                customer.notes || ""
+              }</textarea>
+            </div>
+
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-success" onclick="saveEditedCustomer()">
+                <i class="bi bi-check"></i> Save Changes
+              </button>
+              <button type="button" class="btn btn-secondary" onclick="showCustomerDetails(${
+                customer.id
+              })">
+                <i class="bi bi-x"></i> Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+        } catch (error) {
+          console.error("Error loading customer for edit:", error);
+          alert("Error loading customer data");
+        }
+      }
+
+      async function saveNewCustomer() {
+        // Collect addresses
+        const addresses = [];
+        document.querySelectorAll(".address-block").forEach((block) => {
+          const label = block.querySelector(".address-label").value.trim();
+          if (!label) {
+            alert("Please provide a location name for all addresses");
+            throw new Error("Missing address label");
+          }
+
+          addresses.push({
+            label: label,
+            phone: block.querySelector(".address-phone").value,
+            street: block.querySelector(".address-street").value,
+            city: block.querySelector(".address-city").value,
+            zip: block.querySelector(".address-zip").value,
+          });
+        });
+
+        if (addresses.length === 0) {
+          alert("Please add at least one location");
+          return;
+        }
+
+        const data = {
+          account_number: document.getElementById("newAccountNumber").value,
+          name: document.getElementById("newCompanyName").value,
+          contact_name: document.getElementById("newContactName").value,
+          phone: document.getElementById("newPhone").value,
+          email: document.getElementById("newEmail").value,
+          addresses: addresses,
+          notes: document.getElementById("newNotes").value,
+        };
+
+        if (!data.account_number || !data.name) {
+          alert("Please fill in account number and company name");
+          return;
+        }
+
+        try {
+          const response = await fetch("/customers/api", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+
+          const result = await response.json();
+          if (result.success) {
+            alert("Customer created successfully");
+            loadCustomerList();
+            showCustomerDirectory();
+          } else {
+            alert("Error: " + result.message);
+          }
+        } catch (error) {
+          alert("Error creating customer: " + error.message);
+        }
+      }
+
+      async function saveEditedCustomer() {
+        const customerId = document.getElementById("editCustomerId").value;
+
+        // Collect addresses
+        const addresses = [];
+        document.querySelectorAll(".address-block").forEach((block) => {
+          const label = block.querySelector(".address-label").value.trim();
+          if (!label) {
+            alert("Please provide a location name for all addresses");
+            throw new Error("Missing address label");
+          }
+
+          addresses.push({
+            label: label,
+            phone: block.querySelector(".address-phone").value,
+            street: block.querySelector(".address-street").value,
+            city: block.querySelector(".address-city").value,
+            zip: block.querySelector(".address-zip").value,
+          });
+        });
+
+        if (addresses.length === 0) {
+          alert("Please add at least one location");
+          return;
+        }
+
+        const data = {
+          account_number: document.getElementById("editAccountNumber").value,
+          name: document.getElementById("editCompanyName").value,
+          contact_name: document.getElementById("editContactName").value,
+          phone: document.getElementById("editPhone").value,
+          email: document.getElementById("editEmail").value,
+          addresses: addresses,
+          notes: document.getElementById("editNotes").value,
+        };
+
+        try {
+          const response = await fetch(`/api/customer/${customerId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+
+          const result = await response.json();
+          if (result.success) {
+            alert("Customer updated successfully");
+            showCustomerDetails(customerId);
+            loadCustomerList();
+          } else {
+            alert("Error: " + result.message);
+          }
+        } catch (error) {
+          alert("Error updating customer: " + error.message);
+        }
+      }
+
+      // Debounce timer for search
+      let customerSearchTimeout = null;
+
+      function filterCustomers() {
+        // Clear existing timeout
+        if (customerSearchTimeout) {
+          clearTimeout(customerSearchTimeout);
+        }
+
+        // Set new timeout to avoid too many API calls while typing
+        customerSearchTimeout = setTimeout(() => {
+          const searchTerm = document.getElementById("customerSearch").value.trim();
+          customerSearchTerm = searchTerm;
+
+          // Reset and reload with search term
+          loadCustomerList(true);
+        }, 300); // Wait 300ms after user stops typing
+      }
+
+      function copyToClipboard(text) {
+        if (text) {
+          navigator.clipboard.writeText(text).then(() => {
+            // Show a temporary success message
+            const originalText = event.target.innerHTML;
+            event.target.innerHTML = '<i class="bi bi-check"></i> Copied!';
+            setTimeout(() => {
+              event.target.innerHTML = originalText;
+            }, 2000);
+          });
+        }
+      }
+
+      function addAddressField() {
+        const container = document.getElementById("addressesContainer");
+        const index = container.querySelectorAll(".address-block").length;
+
+        const addressHtml = `
+    <div class="address-block card mb-3" data-address-index="${index}">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="mb-0">Location ${index + 1}</h6>
+          <button type="button" class="btn btn-sm btn-danger" onclick="removeAddressField(this)">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+        
+        <div class="mb-3">
+          <label class="form-label">Location Name *</label>
+          <input type="text" class="form-control address-label" placeholder="e.g., Morangie House, Mansfield Castle" required>
+          <small class="text-muted">This name will appear on callsheets and forms</small>
+        </div>
+        
+        <div class="mb-3">
+          <label class="form-label">Phone Number</label>
+          <input type="text" class="form-control address-phone" placeholder="Phone for this location">
+        </div>
+        
+        <div class="mb-3">
+          <label class="form-label">Street Address</label>
+          <input type="text" class="form-control address-street" placeholder="123 Main Street">
+        </div>
+        
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">City/Town</label>
+            <input type="text" class="form-control address-city" placeholder="Inverness">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Postcode</label>
+            <input type="text" class="form-control address-zip" placeholder="IV1 1XX">
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+        container.insertAdjacentHTML("beforeend", addressHtml);
+      }
+
+      function removeAddressField(button) {
+        const addressBlock = button.closest(".address-block");
+        addressBlock.remove();
+
+        // Renumber remaining addresses
+        document.querySelectorAll(".address-block").forEach((block, index) => {
+          block.dataset.addressIndex = index;
+          block.querySelector("h6").textContent = `Location ${index + 1}`;
+        });
+      }
+    </script>
+
+    {% block scripts %}{% endblock %}
+    <!-- Add in the <head> section or before closing </body> -->
+    <script
+      type="module"
+      src="{{ url_for('static', filename='js/script.js') }}"
+    ></script>
+  </body>
+</html>

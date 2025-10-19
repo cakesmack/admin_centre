@@ -1,0 +1,1285 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Include Select2 for autocomplete -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.css" rel="stylesheet" />
+
+<style>
+/* CALLSHEET ROW COLORS - MAXIMUM SPECIFICITY TO OVERRIDE DARK THEME */
+
+/* GREEN - Customer placed an order */
+table.table tbody tr.callsheet-row.status-ordered,
+table.table tbody tr.callsheet-row.status-ordered td {
+    background-color: #d1e7dd !important;
+    color: #0f5132 !important;
+}
+
+/* RED - Customer declined  */
+table.table tbody tr.callsheet-row.status-declined,
+table.table tbody tr.callsheet-row.status-declined td {
+    background-color: #f8d7da !important;
+    color: #842029 !important;
+}
+
+/* BLUE - No Answer */
+table.table tbody tr.callsheet-row.status-no_answer,
+table.table tbody tr.callsheet-row.status-no_answer td {
+    background-color: #cfe2ff !important;
+    color: #084298 !important;
+}
+
+
+/* WHITE - Not yet called */
+table.table tbody tr.callsheet-row.status-not_called,
+table.table tbody tr.callsheet-row.status-not_called td {
+    background-color: white !important;
+    color: #212529 !important;
+}
+
+/* GRAY - Paused customers */
+table.table tbody tr.callsheet-row.paused-customer,
+table.table tbody tr.callsheet-row.paused-customer td {
+    background-color: #e9ecef !important;
+    color: #6c757d !important;
+    opacity: 0.7;
+}
+
+table.table tbody tr.callsheet-row.paused-customer td {
+    font-style: italic;
+}
+
+/* Keep text readable in all states */
+table.table tbody tr.callsheet-row td strong,
+table.table tbody tr.callsheet-row td small {
+    color: inherit !important;
+}
+
+/* Hover effect */
+table.table tbody tr.callsheet-row:hover td {
+    filter: brightness(0.95);
+}
+
+.notes-preview {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.85rem;
+}
+
+.notes-has-content {
+    color: #0d6efd;
+    font-weight: 500;
+}
+
+.callsheet-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.drag-handle {
+    cursor: move;
+    color: #adb5bd;
+}
+
+.drag-handle:hover {
+    color: #495057;
+}
+
+.sortable-ghost {
+    opacity: 0.4;
+    background: #f8f9fa;
+}
+
+.status-select {
+    font-size: 0.875rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.action-buttons {
+    white-space: nowrap;
+}
+
+/* Loading spinner */
+.spinner-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.spinner-overlay.show {
+    display: flex;
+}
+
+/* Toast notifications */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .callsheet-row {
+        font-size: 0.85rem;
+    }
+    
+    .table-responsive {
+        font-size: 0.85rem;
+    }
+}
+
+/* Day tabs styling */
+.nav-tabs {
+    border-bottom: 2px solid #dee2e6;
+}
+
+.nav-tabs .nav-link {
+    color: #6c757d;
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-bottom: none;
+    margin-bottom: -2px;
+    font-weight: 500;
+    padding: 10px 20px;
+    transition: all 0.2s ease;
+}
+
+.nav-tabs .nav-link:hover {
+    color: #0d6efd;
+    border-color: transparent;
+    background-color: #f8f9fa;
+}
+
+.nav-tabs .nav-link.active {
+    color: #0d6efd;
+    background-color: #fff;
+    border-color: #dee2e6 #dee2e6 #fff;
+    border-width: 2px 2px 2px 2px;
+    border-bottom-color: #fff;
+    font-weight: 600;
+}
+
+/* Callsheet pills styling */
+.nav-pills .nav-link {
+    background-color: #6c757d;
+    color: white;
+    border-radius: 6px;
+    padding: 8px 16px;
+    transition: all 0.2s ease;
+}
+
+.nav-pills .nav-link:hover {
+    background-color: #5a6268;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.nav-pills .nav-link.active {
+    background-color: #0d6efd;
+    box-shadow: 0 2px 8px rgba(13,110,253,0.3);
+}
+
+.nav-pills .badge {
+    font-size: 0.75rem;
+    padding: 2px 6px;
+}
+</style>
+
+<div class="container-fluid">
+    <!-- Header - REMOVED MONTH NAVIGATION -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Call Sheets</h2>
+        <div>
+            <button class="btn btn-info me-2" onclick="viewHistory()">
+                <i class="bi bi-clock-history"></i> View History
+            </button>
+            <button class="btn btn-success" onclick="showAddCallsheetModal()">
+                <i class="bi bi-plus-circle"></i> Add Callsheet
+            </button>
+        </div>
+    </div>
+
+    <!-- Days of Week Tabs -->
+    <ul class="nav nav-tabs mb-3" id="dayTabs" role="tablist" style="border-bottom: 2px solid #dee2e6;">
+        {% for day in days_of_week %}
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if loop.first %}active{% endif %}" 
+                    id="{{ day }}-tab" 
+                    data-bs-toggle="tab" 
+                    data-bs-target="#{{ day }}" 
+                    type="button"
+                    style="border: 1px solid transparent; border-bottom: none; margin-bottom: -2px; font-weight: 500;">
+                {{ day }}
+            </button>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content mt-3" id="dayTabContent">
+        {% for day in days_of_week %}
+        <div class="tab-pane fade {% if loop.first %}show active{% endif %}" id="{{ day }}">
+            
+            {% if callsheets_by_day[day] %}
+            <!-- Callsheet tabs for this day -->
+            <ul class="nav nav-pills mb-3">
+                {% for callsheet in callsheets_by_day[day] %}
+                <li class="nav-item me-2">
+                    <a class="nav-link {% if loop.first %}active{% endif %}" 
+                       data-bs-toggle="pill" 
+                       href="#callsheet-{{ callsheet.id }}">
+                        {{ callsheet.name }}
+                        <span class="ms-2">
+                            <i class="bi bi-pencil-square text-white" 
+                               onclick="editCallsheet(event, {{ callsheet.id }}, '{{ callsheet.name }}', '{{ day }}')"
+                               title="Edit"
+                               style="cursor: pointer;"></i>
+                            <i class="bi bi-trash text-white ms-1" 
+                               onclick="deleteCallsheet(event, {{ callsheet.id }})"
+                               title="Delete"
+                               style="cursor: pointer;"></i>
+                        </span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+            
+            <!-- Callsheet content -->
+            <div class="tab-content">
+                {% for callsheet in callsheets_by_day[day] %}
+                <div class="tab-pane fade {% if loop.first %}show active{% endif %}" 
+                     id="callsheet-{{ callsheet.id }}">
+                    
+                    <div class="card">
+                        <div class="card-header callsheet-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">{{ callsheet.name }} - {{ day }}</h5>
+                            <div>
+                                <button class="btn btn-sm btn-primary me-2" 
+                                        onclick="completeCallsheet({{ callsheet.id }}, '{{ callsheet.name }}')">
+                                    <i class="bi bi-check-circle"></i> Complete
+                                </button>
+                                <button class="btn btn-sm btn-success" 
+                                        onclick="showAddCustomerModal({{ callsheet.id }})">
+                                    <i class="bi bi-person-plus"></i> Add Customer
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0" id="callsheet-table-{{ callsheet.id }}">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 20px;"></th>
+                                            <th style="width: 120px;">Account</th>
+                                            <th style="width: 120px;">Phone No.</th>
+                                            <th style="width: 80px;">Status</th>
+                                            <th style="width: 80px;">Called By</th>
+                                            <th style="width: 80px;">Person/Time</th>
+                                            <th style="width: 350px;">Notes</th>
+                                            <th style="width: 80px;">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="sortable-list" data-callsheet-id="{{ callsheet.id }}">
+  {% for entry in callsheet.entries %}
+  <tr class="callsheet-row status-{{ entry.call_status }}" 
+      data-entry-id="{{ entry.id }}">
+    <td class="text-center">
+      <i class="bi bi-grip-vertical drag-handle"></i>
+    </td>
+    <td>
+      <strong>{{ entry.customer.account_number }}<br />{{ entry.customer.name }}</strong>
+      {% if entry.address_label %}
+      <br><small class="text-muted"><i class="bi bi-geo-alt"></i> {{ entry.address_label }}</small>
+      {% endif %}
+    </td>
+    <td>
+      <strong>
+        {% if entry.address and entry.address.phone %}
+          {{ entry.address.phone }}
+        {% elif entry.customer.phone %}
+          {{ entry.customer.phone }}
+        {% else %}
+          -
+        {% endif %}
+      </strong>
+    </td>
+    <td>
+      <select class="form-select form-select-sm status-select" 
+              onchange="confirmStatusChange(this, {{ entry.id }})"
+              data-current-status="{{ entry.call_status }}">
+        <option value="not_called" {% if entry.call_status == 'not_called' %}selected{% endif %}>Not Called</option>
+        <option value="no_answer" {% if entry.call_status == 'no_answer' %}selected{% endif %}>No Answer</option>
+        <option value="declined" {% if entry.call_status == 'declined' %}selected{% endif %}>Declined</option>
+        <option value="ordered" {% if entry.call_status == 'ordered' %}selected{% endif %}>Ordered</option>
+      </select>
+    </td>
+    <td>
+      {% if entry.called_by %}
+      <small>{{ entry.called_by }}</small>
+      {% else %}
+      <small>-</small>
+      {% endif %}
+    </td>
+    <td>
+      {% if entry.person_spoken_to %}
+      <small>{{ entry.person_spoken_to }}<br>
+        {% if entry.call_date %}
+        {{ entry.call_date.strftime('%H:%M') }}
+        {% endif %}
+      </small>
+      {% else %}
+      <small>-</small>
+      {% endif %}
+    </td>
+    <td>
+      <div class="d-flex align-items-center">
+        <div class="notes-preview {% if entry.customer.callsheet_notes %}has-notes{% endif %}" 
+             style="flex-grow: 1; cursor: pointer;" 
+onclick="showNotesModal({{ entry.id }}, {{ entry.customer.id }}, '{{ entry.customer.callsheet_notes|default('') }}')"
+          {% if entry.customer.callsheet_notes %}
+          <i class="bi bi-sticky-fill text-warning"></i> 
+          {{ entry.customer.callsheet_notes[:30] }}{% if entry.customer.callsheet_notes|length > 30 %}...{% endif %}
+          {% else %}
+          <i class="bi bi-sticky text-muted"></i> Click to add notes
+          {% endif %}
+        </div>
+      </div>
+    </td>
+    <td>
+      <button class="btn btn-sm btn-danger" 
+              onclick="removeCustomer({{ entry.id }})" 
+              title="Remove from callsheet">
+        <i class="bi bi-trash"></i>
+      </button>
+      <button class="btn btn-sm btn-warning" 
+              onclick="togglePauseCustomer({{ entry.id }})" 
+              title="Pause Customer">
+        <i class="bi bi-pause-fill"></i>
+      </button>
+    </td>
+  </tr>
+  {% endfor %}
+</tbody>
+                                        {% if callsheet.paused_entries %}
+                                        <!-- Paused Customers Section -->
+                                        <tr class="table-secondary">
+                                            <td colspan="8" class="text-center py-2">
+                                                <strong><i class="bi bi-pause-circle"></i> Paused Customers (Seasonal)</strong>
+                                            </td>
+                                        </tr>
+                                        {% for entry in callsheet.paused_entries %}
+                                        <tr class="callsheet-row paused-customer" 
+                                            data-entry-id="{{ entry.id }}">
+                                            <td class="text-center">
+                                                <i class="bi bi-grip-vertical drag-handle"></i>
+                                            </td>
+                                            <td><strong>{{ entry.customer.name }}<br />
+                                            {{ entry.customer.account_number }}</strong></td>
+                                            <td colspan="5">
+                                                <span class="badge bg-secondary">Paused</span>
+                                                <small class="text-muted ms-2">This customer is temporarily inactive</small>
+                                            </td>
+                                            <td class="action-buttons">
+                                                <button class="btn btn-sm btn-success" 
+                                                        onclick="togglePauseCustomer({{ entry.id }})"
+                                                        title="Resume customer">
+                                                    <i class="bi bi-play-circle"></i> Resume
+                                                </button>
+                                                <button class="btn btn-sm btn-danger" 
+                                                        onclick="removeCustomer({{ entry.id }})"
+                                                        title="Remove from callsheet">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="alert alert-info d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="bi bi-info-circle me-2"></i>
+                    No callsheets for {{ day }}. Create one to get started!
+                </div>
+                <button class="btn btn-sm btn-primary" 
+                        onclick="showAddCallsheetModal('{{ day }}')">
+                    Add Callsheet
+                </button>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Loading Spinner -->
+<div class="spinner-overlay" id="loadingSpinner">
+    <div class="spinner-border text-light" role="status" style="width: 3rem; height: 3rem;">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Add/Edit Callsheet Modal -->
+<div class="modal fade" id="callsheetModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="callsheetModalTitle">Add New Callsheet</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="callsheetForm">
+                    <input type="hidden" id="callsheetId">
+                    <div class="mb-3">
+                        <label class="form-label">Callsheet Name</label>
+                        <input type="text" class="form-control" id="callsheetName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Day of Week</label>
+                        <select class="form-select" id="callsheetDay" required>
+                            {% for day in days_of_week %}
+                            <option value="{{ day }}">{{ day }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveCallsheet()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Status Update Modal -->
+<div class="modal fade" id="statusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="statusModalTitle">Update Call Status</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="statusEntryId">
+                <input type="hidden" id="statusValue">
+                
+                <!-- Always show person spoken to (for all statuses) -->
+                <div class="mb-3">
+                    <label class="form-label">Person Spoken To (Optional)</label>
+                    <input type="text" class="form-control" id="personSpokenTo" 
+                           placeholder="Name of person you spoke with">
+                    <small class="text-muted">Record who you spoke to for any status</small>
+                </div>
+                
+                
+                
+                <div class="alert alert-info">
+                    <small><i class="bi bi-info-circle"></i> Use the Notes section below to add any additional details about this call.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveCallStatus()">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notes Modal -->
+<div class="modal fade" id="notesModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Customer Notes (Persistent)</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="notesEntryId">
+                <input type="hidden" id="notesCustomerId">
+                <div class="alert alert-info">
+                    <i class="bi bi-lightbulb"></i> These notes are saved to the customer and will persist across all callsheets. Delete when no longer needed.
+                </div>
+                <textarea class="form-control" id="notesText" rows="6" 
+                          placeholder="Enter notes about this customer..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" onclick="clearNotes()">
+                    <i class="bi bi-trash"></i> Clear Notes
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveNotes()">Save Notes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Customer to Callsheet Modal -->
+<div class="modal fade" id="addCustomerModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Customer to Callsheet</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="addCallsheetId">
+                <div class="mb-3">
+                    <label class="form-label">Search Customer (by account number or name)</label>
+                    <select class="form-control" id="customerSearchSelect" style="width: 100%;">
+                        <option></option>
+                    </select>
+                </div>
+                
+                <!-- Address Selection (shown when customer has multiple addresses) -->
+                <div id="addressSelectionContainer" style="display: none;">
+                    <div class="mb-3">
+                        <label class="form-label">Select Location *</label>
+                        <select class="form-select" id="addressSelect">
+                            <option value="">Choose a location...</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="selectedCustomerInfo" class="alert alert-info" style="display:none;">
+                    <strong>Selected Customer:</strong><br>
+                    <span id="selectedCustomerDetails"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="addCustomerToCallsheet()">Add Customer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include jQuery, Select2, and SortableJS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+<script>
+// Initialize modals
+let callsheetModal, statusModal, notesModal, addCustomerModal;
+let selectedCustomerId = null;
+let selectedAddressId = null;
+let customerAddresses = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    callsheetModal = new bootstrap.Modal(document.getElementById('callsheetModal'));
+    statusModal = new bootstrap.Modal(document.getElementById('statusModal'));
+    notesModal = new bootstrap.Modal(document.getElementById('notesModal'));
+    addCustomerModal = new bootstrap.Modal(document.getElementById('addCustomerModal'));
+    
+    // Initialize Select2 for customer search
+    $('#customerSearchSelect').select2({
+    theme: 'bootstrap-5',
+    placeholder: 'Search by account number or name',
+    allowClear: true,
+    dropdownParent: $('#addCustomerModal'),
+    minimumInputLength: 2,
+    ajax: {
+        url: '/api/customers/search',
+        dataType: 'json',
+        delay: 250,
+        data: function(params) {
+            return { q: params.term };
+        },
+        processResults: function(data) {
+            return {
+                results: data.map(c => ({
+                    id: c.id,
+                    text: `${c.account_number} - ${c.name}`,
+                    customer: c
+                }))
+            };
+        }
+    }
+}).on('select2:select', async function(e) {
+    const customer = e.params.data.customer;
+    selectedCustomerId = customer.id;
+    
+    // Fetch customer addresses
+    await loadCustomerAddresses(customer.id);
+    
+    // Show customer info
+    $('#selectedCustomerInfo').show();
+    $('#selectedCustomerDetails').html(`
+        <strong>${customer.name}</strong> (${customer.account_number})<br>
+        Main Phone: ${customer.phone || 'Not specified'}
+    `);
+});
+
+async function loadCustomerAddresses(customerId) {
+    try {
+        const response = await fetch(`/api/customer/${customerId}/addresses`);
+        customerAddresses = await response.json();
+        
+        const addressSelect = document.getElementById('addressSelect');
+        const addressContainer = document.getElementById('addressSelectionContainer');
+        
+        if (customerAddresses.length >= 1) {
+            // ALWAYS show selector when addresses exist
+            addressContainer.style.display = 'block';
+            addressSelect.innerHTML = '<option value="">Choose a location...</option>';
+            
+            customerAddresses.forEach(addr => {
+                const option = document.createElement('option');
+                option.value = addr.id || customerAddresses.indexOf(addr);
+                option.textContent = `${addr.label}${addr.phone ? ' - ' + addr.phone : ''}`;
+                addressSelect.appendChild(option);
+            });
+            
+            selectedAddressId = null; // Always require selection
+        } else {
+            addressContainer.style.display = 'none';
+            selectedAddressId = null;
+        }
+    } catch (error) {
+        console.error('Error loading addresses:', error);
+        showToast('Error loading customer addresses', 'danger');
+    }
+}
+
+    
+    // Initialize drag-and-drop
+    document.querySelectorAll('.sortable-list').forEach(list => {
+        new Sortable(list, {
+            animation: 150,
+            handle: '.drag-handle',
+            ghostClass: 'sortable-ghost',
+            onEnd: function(evt) {
+                const entryId = evt.item.dataset.entryId;
+                const newPosition = evt.newIndex + 1;
+                updateEntryPosition(entryId, newPosition);
+            }
+        });
+    });
+});
+
+// Utility functions
+function showLoading() {
+    document.getElementById('loadingSpinner').classList.add('show');
+}
+
+function hideLoading() {
+    document.getElementById('loadingSpinner').classList.remove('show');
+}
+
+function showToast(message, type = 'success') {
+    const toastHtml = `
+        <div class="toast align-items-center text-white bg-${type} border-0" role="alert">
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    `;
+    
+    const container = document.getElementById('toastContainer');
+    container.insertAdjacentHTML('beforeend', toastHtml);
+    
+    const toastElement = container.lastElementChild;
+    const toast = new bootstrap.Toast(toastElement, { delay: 3000 });
+    toast.show();
+    
+    toastElement.addEventListener('hidden.bs.toast', () => toastElement.remove());
+}
+
+// Callsheet Management
+function showAddCallsheetModal(day) {
+    document.getElementById('callsheetModalTitle').textContent = 'Add New Callsheet';
+    document.getElementById('callsheetId').value = '';
+    document.getElementById('callsheetName').value = '';
+    if (day) {
+        document.getElementById('callsheetDay').value = day;
+    }
+    callsheetModal.show();
+}
+
+function editCallsheet(event, id, name, day) {
+    event.stopPropagation();
+    event.preventDefault();
+    document.getElementById('callsheetModalTitle').textContent = 'Edit Callsheet';
+    document.getElementById('callsheetId').value = id;
+    document.getElementById('callsheetName').value = name;
+    document.getElementById('callsheetDay').value = day;
+    callsheetModal.show();
+}
+
+async function saveCallsheet() {
+    const id = document.getElementById('callsheetId').value;
+    const name = document.getElementById('callsheetName').value;
+    const day = document.getElementById('callsheetDay').value;
+    
+    if (!name) {
+        showToast('Please enter a callsheet name', 'warning');
+        return;
+    }
+    
+    showLoading();
+    
+    try {
+        const url = id ? `/callsheets/api/callsheet/${id}/update` : '/callsheets/api/callsheet/create';
+        const body = { name: name, day_of_week: day };
+        
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(body)
+        });
+        
+        const data = await response.json();
+        hideLoading();
+        
+        if (data.success) {
+            callsheetModal.hide();
+            showToast(data.message, 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast(data.message, 'danger');
+        }
+    } catch (error) {
+        hideLoading();
+        showToast('Error: ' + error.message, 'danger');
+    }
+}
+
+function deleteCallsheet(event, callsheetId) {
+    event.stopPropagation();
+    event.preventDefault();
+    
+    if (!confirm('Are you sure you want to delete this callsheet? All entries will be removed.')) {
+        return;
+    }
+    
+    showLoading();
+    
+    fetch(`/callsheets/api/callsheet/${callsheetId}/delete`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoading();
+        if (data.success) {
+            showToast(data.message, 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast(data.message, 'danger');
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        showToast('Error: ' + error.message, 'danger');
+    });
+}
+
+// Complete callsheet
+function completeCallsheet(callsheetId, callsheetName) {
+    if (!confirm(`Complete "${callsheetName}"? This will save the current state and reset all entries to "Not Called".`)) {
+        return;
+    }
+    
+    showLoading();
+    
+    fetch(`/callsheets/api/callsheet/${callsheetId}/complete`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoading();
+        if (data.success) {
+            showToast(data.message, 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showToast(data.message, 'danger');
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        showToast('Error: ' + error.message, 'danger');
+    });
+}
+
+// View history
+function viewHistory() {
+    window.location.href = '/callsheets/history';
+}
+
+// Call Status Management
+function confirmStatusChange(selectElement, entryId) {
+    const newStatus = selectElement.value;
+    const oldStatus = selectElement.dataset.currentStatus;
+    
+    if (newStatus === 'not_called') {
+        saveCallStatusDirect(entryId, newStatus, selectElement);
+        return;
+    }
+    
+    // Auto-save No Answer with N/A
+    if (newStatus === 'no_answer') {
+        saveCallStatusWithPerson(entryId, newStatus, 'N/A', selectElement);
+        return;
+    }
+    
+    document.getElementById('statusEntryId').value = entryId;
+    document.getElementById('statusValue').value = newStatus;
+    document.getElementById('personSpokenTo').value = '';
+    
+    if (newStatus === 'ordered') {
+        document.getElementById('statusModalTitle').textContent = 'Record Order';
+    } else if (newStatus === 'declined') {
+        document.getElementById('statusModalTitle').textContent = 'Customer Declined';
+    }
+    
+    statusModal.show();
+}
+
+async function saveCallStatus() {
+    const entryId = document.getElementById('statusEntryId').value;
+    const status = document.getElementById('statusValue').value;
+    
+    let data = { call_status: status };
+    
+    const personSpokenTo = document.getElementById('personSpokenTo').value;
+    if (personSpokenTo) {
+        data.person_spoken_to = personSpokenTo;
+    }
+    
+    
+    
+    showLoading();
+    
+    try {
+        const response = await fetch(`/callsheets/api/callsheet-entry/${entryId}/update-status`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        hideLoading();
+        
+        if (result.success) {
+            statusModal.hide();
+            
+            // Update the row directly instead of reloading
+            const row = document.querySelector(`tr[data-entry-id="${entryId}"]`);
+            if (row) {
+                // Update status class
+                row.className = `callsheet-row status-${status}`;
+                
+                // Update select element
+                const select = row.querySelector('.status-select');
+                select.dataset.currentStatus = status;
+                
+                // Update person spoken to
+                if (personSpokenTo) {
+                    row.querySelector('td:nth-child(6) small').textContent = personSpokenTo;
+                }
+                
+                
+                
+                // Update called by column
+                row.querySelector('td:nth-child(5) small').textContent = '{{ current_user.username }}';
+            }
+            
+            showToast(result.message, 'success');
+        } else {
+            showToast(result.message, 'danger');
+        }
+    } catch (error) {
+        hideLoading();
+        showToast('Error: ' + error.message, 'danger');
+    }
+}
+
+async function saveCallStatusDirect(entryId, status, selectElement) {
+    showLoading();
+    
+    try {
+        const response = await fetch(`/callsheets/api/callsheet-entry/${entryId}/update-status`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ call_status: status })
+        });
+        
+        const result = await response.json();
+        hideLoading();
+        
+        if (result.success) {
+            selectElement.dataset.currentStatus = status;
+            
+            // Update row class
+            const row = selectElement.closest('tr');
+            row.className = `callsheet-row status-${status}`;
+            
+            // Update called by if changed to not_called, clear it
+            if (status === 'not_called') {
+                row.querySelector('td:nth-child(5) small').textContent = '-';
+                row.querySelector('td:nth-child(6) small').textContent = '-';
+                const badge = row.querySelector('td:nth-child(6) .badge');
+                if (badge) badge.remove();
+            } else {
+                row.querySelector('td:nth-child(5) small').textContent = '{{ current_user.username }}';
+            }
+            
+            showToast(result.message, 'success');
+        } else {
+            selectElement.value = selectElement.dataset.currentStatus;
+            showToast(result.message, 'danger');
+        }
+    } catch (error) {
+        hideLoading();
+        selectElement.value = selectElement.dataset.currentStatus;
+        showToast('Error: ' + error.message, 'danger');
+    }
+}
+
+
+async function saveCallStatusWithPerson(entryId, status, person, selectElement) {
+    showLoading();
+    
+    try {
+        const response = await fetch(`/callsheets/api/callsheet-entry/${entryId}/update-status`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ 
+                call_status: status,
+                person_spoken_to: person
+            })
+        });
+        
+        const result = await response.json();
+        hideLoading();
+        
+        if (result.success) {
+            selectElement.dataset.currentStatus = status;
+            const row = selectElement.closest('tr');
+            row.className = `callsheet-row status-${status}`;
+            row.querySelector('td:nth-child(5) small').textContent = '{{ current_user.username }}';
+            row.querySelector('td:nth-child(6) small').textContent = person;
+            showToast(result.message, 'success');
+        } else {
+            selectElement.value = selectElement.dataset.currentStatus;
+            showToast(result.message, 'danger');
+        }
+    } catch (error) {
+        hideLoading();
+        selectElement.value = selectElement.dataset.currentStatus;
+        showToast('Error: ' + error.message, 'danger');
+    }
+}
+// Notes Management
+function showNotesModal(entryId, customerId, notes) {
+    document.getElementById('notesEntryId').value = entryId;
+    document.getElementById('notesCustomerId').value = customerId;
+    document.getElementById('notesText').value = notes || '';
+    notesModal.show();
+}
+
+async function saveNotes() {
+    const entryId = document.getElementById('notesEntryId').value;
+    const notes = document.getElementById('notesText').value;
+    
+    showLoading();
+    
+    try {
+        const response = await fetch(`/callsheets/api/callsheet-entry/${entryId}/update-notes`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ notes: notes })
+        });
+        
+        const result = await response.json();
+        hideLoading();
+        
+        if (result.success) {
+            notesModal.hide();
+            
+            // Update notes display in the row
+            const row = document.querySelector(`tr[data-entry-id="${entryId}"]`);
+            if (row) {
+                const notesPreview = row.querySelector('.notes-preview');
+                if (notes) {
+                    notesPreview.classList.add('notes-has-content');
+                    notesPreview.textContent = notes.length > 50 ? notes.substring(0, 50) + '...' : notes;
+                } else {
+                    notesPreview.classList.remove('notes-has-content');
+                    notesPreview.innerHTML = '<span>Click to add notes</span>';
+                }
+                
+                // Update icon
+                const icon = row.querySelector('.bi-chat-dots, .bi-chat-dots-fill');
+                if (icon) {
+                    if (notes) {
+                        icon.classList.remove('bi-chat-dots');
+                        icon.classList.add('bi-chat-dots-fill');
+                    } else {
+                        icon.classList.remove('bi-chat-dots-fill');
+                        icon.classList.add('bi-chat-dots');
+                    }
+                }
+            }
+            
+            showToast(result.message, 'success');
+        } else {
+            showToast(result.message, 'danger');
+        }
+    } catch (error) {
+        hideLoading();
+        showToast('Error: ' + error.message, 'danger');
+    }
+}
+
+function clearNotes() {
+    if (confirm('Are you sure you want to clear these notes? This will permanently delete them.')) {
+        document.getElementById('notesText').value = '';
+        saveNotes();
+    }
+}
+
+// Customer Management
+document.getElementById('addressSelect').addEventListener('change', function() {
+    selectedAddressId = this.value;
+});
+
+function showAddCustomerModal(callsheetId) {
+    document.getElementById('addCallsheetId').value = callsheetId;
+    
+    const $select = $('#customerSearchSelect');
+    $select.val(null).trigger('change');
+    $select.empty().append('<option></option>');
+    
+    $('#selectedCustomerInfo').hide();
+    $('#addressSelectionContainer').hide();
+    document.getElementById('addressSelect').innerHTML = '<option value="">Choose a location...</option>';
+    
+    selectedCustomerId = null;
+    selectedAddressId = null;
+    customerAddresses = [];
+    
+    addCustomerModal.show();
+}
+
+async function addCustomerToCallsheet() {
+    const callsheetId = document.getElementById('addCallsheetId').value;
+    
+    if (!selectedCustomerId) {
+        showToast('Please select a customer', 'warning');
+        return;
+    }
+    
+    // Check if address selection is required
+    if (customerAddresses.length > 1 && !selectedAddressId) {
+        showToast('Please select a location', 'warning');
+        return;
+    }
+    
+    // Get selected address info
+    let selectedAddress = null;
+    if (selectedAddressId !== null) {
+        selectedAddress = customerAddresses.find(a => 
+            (a.id && a.id == selectedAddressId) || 
+            customerAddresses.indexOf(a) == selectedAddressId
+        );
+    }
+    
+    showLoading();
+    
+    try {
+        const response = await fetch(`/callsheets/api/callsheet/${callsheetId}/add-customer`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                customer_id: selectedCustomerId,
+                address_id: selectedAddressId,
+                address_label: selectedAddress ? selectedAddress.label : null
+            })
+        });
+        
+        const data = await response.json();
+        hideLoading();
+        
+        if (data.success) {
+            addCustomerModal.hide();
+            
+            // Find the correct tbody for this callsheet
+            const tbody = document.querySelector(`tbody[data-callsheet-id="${callsheetId}"]`);
+            
+            if (tbody) {
+                const customer = data.entry.customer;
+                const entryId = data.entry.id;
+                const addressLabel = selectedAddress ? selectedAddress.label : '';
+                const addressPhone = selectedAddress && selectedAddress.phone ? selectedAddress.phone : customer.phone;
+                
+                // Create new row HTML
+                const newRow = `
+                    <tr class="callsheet-row status-not_called" data-entry-id="${entryId}">
+                        <td class="text-center">
+                            <i class="bi bi-grip-vertical drag-handle"></i>
+                        </td>
+                        <td>
+                            <strong>${customer.account_number}<br />${customer.name}</strong>
+                            ${addressLabel ? `<br><small class="text-muted"><i class="bi bi-geo-alt"></i> ${addressLabel}</small>` : ''}
+                        </td>
+                        <td><strong>${addressPhone || '-'}</strong></td>
+                        <td>
+                            <select class="form-select form-select-sm status-select" 
+                                    onchange="confirmStatusChange(this, ${entryId})"
+                                    data-current-status="not_called">
+                                <option value="not_called" selected>Not Called</option>
+                                <option value="no_answer">No Answer</option>
+                                <option value="declined">Declined</option>
+                                <option value="ordered">Ordered</option>
+                            </select>
+                        </td>
+                        <td><small>-</small></td>
+                        <td><small>-</small></td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="notes-preview ${customer.callsheet_notes ? 'has-notes' : ''}" 
+                                     style="flex-grow: 1; cursor: pointer;" 
+                                     onclick="showNotesModal(${entryId}, '${customer.name.replace(/'/g, "\\'")}')">
+                                    ${customer.callsheet_notes ? 
+                                        '<i class="bi bi-sticky-fill text-warning"></i> ' + 
+                                        (customer.callsheet_notes.substring(0, 30) + '...') : 
+                                        '<i class="bi bi-sticky text-muted"></i> Click to add notes'
+                                    }
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" 
+                                    onclick="removeCustomer(${entryId})" 
+                                    title="Remove from callsheet">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                            <button class="btn btn-sm btn-warning" 
+            onclick="togglePauseCustomer(${entryId})" 
+            title="Pause Customer">
+        <i class="bi bi-pause-fill"></i>
+    </button>
+                        </td>
+                    </tr>
+                `;
+                
+                tbody.insertAdjacentHTML('beforeend', newRow);
+                showToast('Customer added to callsheet', 'success');
+            }
+        } else {
+            showToast(data.message || 'Error adding customer', 'danger');
+        }
+    } catch (error) {
+        hideLoading();
+        console.error('Error:', error);
+        showToast('Error adding customer to callsheet', 'danger');
+    }
+}
+
+function removeCustomer(entryId) {
+    if (!confirm('Remove this customer from the callsheet?')) {
+        return;
+    }
+    
+    showLoading();
+    
+    fetch(`/callsheets/api/callsheet-entry/${entryId}/delete`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoading();
+        if (data.success) {
+            // Remove the row from DOM
+            const row = document.querySelector(`tr[data-entry-id="${entryId}"]`);
+            if (row) {
+                row.remove();
+            }
+            showToast(data.message, 'success');
+        } else {
+            showToast(data.message, 'danger');
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        showToast('Error: ' + error.message, 'danger');
+    });
+}
+
+async function togglePauseCustomer(entryId) {
+    showLoading();
+    
+    try {
+        const response = await fetch(`/callsheets/api/callsheet-entry/${entryId}/toggle-pause`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        });
+        
+        const data = await response.json();
+        hideLoading();
+        
+        if (data.success) {
+            showToast(data.message, 'success');
+            // This one needs reload to move between active/paused sections
+            setTimeout(() => location.reload(), 500);
+        } else {
+            showToast(data.message, 'danger');
+        }
+    } catch (error) {
+        hideLoading();
+        showToast('Error: ' + error.message, 'danger');
+    }
+}
+
+async function updateEntryPosition(entryId, newPosition) {
+    try {
+        const response = await fetch(`/callsheets/api/callsheet-entry/${entryId}/reorder`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ position: newPosition })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            showToast('Order updated', 'success');
+        } else {
+            showToast(result.message, 'danger');
+            location.reload();
+        }
+    } catch (error) {
+        showToast('Error updating order', 'danger');
+        location.reload();
+    }
+}
+</script>
+
+
+{% endblock %}

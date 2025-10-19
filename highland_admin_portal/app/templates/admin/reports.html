@@ -1,0 +1,1157 @@
+{% extends "base.html" %} {% block content %}
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-graph-up-arrow"></i> Admin Reports & Analytics</h2>
+    <button class="btn btn-primary" onclick="exportReport()">
+      <i class="bi bi-download"></i> Export Report
+    </button>
+  </div>
+
+  <!-- Date Range Selector -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <div class="row align-items-end">
+        <div class="col-md-3">
+          <label class="form-label">Report Period</label>
+          <select
+            class="form-select"
+            id="reportPeriod"
+            onchange="updateDateRange()"
+          >
+            <option value="today">Today</option>
+            <option value="yesterday">Yesterday</option>
+            <option value="this_week">This Week</option>
+            <option value="last_week">Last Week</option>
+            <option value="this_month" selected>This Month</option>
+            <option value="last_month">Last Month</option>
+            <option value="custom">Custom Range</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Start Date</label>
+          <input type="date" class="form-control" id="startDate" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">End Date</label>
+          <input type="date" class="form-control" id="endDate" />
+        </div>
+        <div class="col-md-3">
+          <button class="btn btn-success w-100" onclick="loadAllReports()">
+            <i class="bi bi-arrow-clockwise"></i> Generate Report
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary Statistics -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card text-center">
+        <div class="card-body">
+          <h3 class="text-primary mb-0" id="totalFormsCount">-</h3>
+          <small class="text-muted">Total Forms</small>
+          <div class="mt-2">
+            <span class="badge bg-success" id="completedFormsBadge"
+              >- Completed</span
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-center">
+        <div class="card-body">
+          <h3 class="text-success mb-0" id="standingOrdersCount">-</h3>
+          <small class="text-muted">Standing Orders</small>
+          <div class="mt-2">
+            <span class="badge bg-primary" id="newOrdersBadge">- New</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-center">
+        <div class="card-body">
+          <h3 class="text-info mb-0" id="stockTransactionsCount">-</h3>
+          <small class="text-muted">Stock Transactions</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-center">
+        <div class="card-body">
+          <h3 class="text-warning mb-0" id="callsheetEntriesCount">-</h3>
+          <small class="text-muted">Callsheet Entries</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="bi bi-activity"></i> Daily Activity Trend
+          </h5>
+        </div>
+        <div class="card-body">
+          <canvas id="dailyActivityChart" height="80"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="bi bi-pie-chart-fill"></i> Forms by Type
+          </h5>
+        </div>
+        <div class="card-body">
+          <canvas id="formsTypeChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Callsheet Quick Stats -->
+  <div class="card mb-4 border-primary">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0">
+        <i class="bi bi-telephone-fill"></i> Callsheet Quick Stats
+      </h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header">
+              <h6 class="mb-0">Call Status Breakdown (Current Period)</h6>
+            </div>
+            <div class="card-body">
+              <canvas id="callsheetStatusChart"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header bg-success text-white">
+              <h6 class="mb-0 text-white">
+                <i class="bi bi-star-fill"></i> Most Responsive Customers
+              </h6>
+            </div>
+            <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+              <div id="mostResponsiveCustomers">
+                <div class="text-center text-muted">Loading...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Activity Table -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="mb-0">
+        <i class="bi bi-people-fill"></i> Staff Activity Report
+      </h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Staff Member</th>
+              <th>Forms Created</th>
+              <th>Calls Made</th>
+              <th>Stock Transactions</th>
+              <th>Total Activity</th>
+            </tr>
+          </thead>
+          <tbody id="userActivityTable">
+            <tr>
+              <td colspan="5" class="text-center text-muted">Loading...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Call History Analytics Section -->
+  <div class="card mb-4 border-info">
+    <div class="card-header bg-info text-white">
+      <h5 class="mb-0">
+        <i class="bi bi-clock-history"></i> Call History Analytics
+      </h5>
+      <small>Comprehensive tracking of all call attempts over time</small>
+    </div>
+    <div class="card-body">
+      <div class="row mb-4">
+        <div class="col-md-3">
+          <div class="card text-center bg-light">
+            <div class="card-body">
+              <h3 class="text-primary mb-0" id="totalCallsHistory">-</h3>
+              <small class="text-muted">Total Calls Tracked</small>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card text-center bg-light">
+            <div class="card-body">
+              <h3 class="text-success mb-0" id="historySuccessRate">-</h3>
+              <small class="text-muted">Overall Success Rate</small>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card text-center bg-light">
+            <div class="card-body">
+              <h3 class="text-danger mb-0" id="historyDeclineRate">-</h3>
+              <small class="text-muted">Overall Decline Rate</small>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card text-center bg-light">
+            <div class="card-body">
+              <h3 class="text-warning mb-0" id="historyNoAnswerRate">-</h3>
+              <small class="text-muted">Overall No Answer Rate</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header">
+              <h6 class="mb-0">Weekly Call Trends</h6>
+            </div>
+            <div class="card-body">
+              <canvas id="weeklyTrendsChart"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header">
+              <h6 class="mb-0">Daily Success Trend (Last 14 Days)</h6>
+            </div>
+            <div class="card-body">
+              <canvas id="dailyHistoryChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Returns Analytics Section -->
+  <div class="card mb-4 border-warning">
+    <div class="card-header bg-warning text-dark">
+      <h5 class="mb-0">
+        <i class="bi bi-arrow-return-left"></i> Returns Analytics
+      </h5>
+      <small>Analysis of return forms - reasons and trends</small>
+    </div>
+    <div class="card-body">
+      <div class="row mb-4">
+        <div class="col-md-12">
+          <div class="card text-center bg-light">
+            <div class="card-body">
+              <h3 class="text-warning mb-0" id="totalReturnsCount">-</h3>
+              <small class="text-muted">Total Returns (Selected Period)</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header">
+              <h6 class="mb-0">Most Common Return Reasons</h6>
+            </div>
+            <div class="card-body">
+              <canvas id="returnReasonsChart"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header">
+              <h6 class="mb-0">Top Customers with Returns</h6>
+            </div>
+            <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+              <div id="topReturningCustomers">
+                <div class="text-center text-muted">Loading...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Problem Customers Section -->
+  <div class="card mb-4 border-danger">
+    <div class="card-header bg-danger text-white">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h5 class="mb-0">
+            <i class="bi bi-exclamation-octagon-fill"></i> Problem Customers - Action Required
+          </h5>
+          <small>Customers with high decline or no-answer rates</small>
+        </div>
+        <div class="d-flex gap-2">
+          <span class="badge bg-light text-dark" id="highPriorityCount">0 High Priority</span>
+          <span class="badge bg-light text-dark" id="mediumPriorityCount">0 Medium Priority</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="d-flex justify-content-between mb-3">
+        <div>
+          <label class="form-label">Lookback Period</label>
+          <select class="form-select" id="problemCustomersDays" onchange="loadProblemCustomers()">
+            <option value="30">Last 30 days</option>
+            <option value="60" selected>Last 60 days</option>
+            <option value="90">Last 90 days</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Minimum Calls</label>
+          <select class="form-select" id="minCallsFilter" onchange="loadProblemCustomers()">
+            <option value="2">2+ calls</option>
+            <option value="3" selected>3+ calls</option>
+            <option value="5">5+ calls</option>
+          </select>
+        </div>
+      </div>
+      <div id="problemCustomersList">
+        <div class="text-center text-muted">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sales Rep Needed Section -->
+  <div class="card mb-4 border-warning">
+    <div class="card-header bg-warning text-dark">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h5 class="mb-0">
+            <i class="bi bi-person-badge-fill"></i> Customers Needing Sales Rep Visit
+          </h5>
+          <small>Customers where phone approach is not working</small>
+        </div>
+        <div class="d-flex gap-2">
+          <span class="badge bg-danger" id="salesRepHighPriority">0 High</span>
+          <span class="badge bg-warning text-dark" id="salesRepMediumPriority">0 Medium</span>
+          <span class="badge bg-secondary" id="salesRepLowPriority">0 Low</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="mb-3">
+        <label class="form-label">Analysis Period</label>
+        <select class="form-select w-auto" id="salesRepDays" onchange="loadSalesRepNeeded()">
+          <option value="60">Last 60 days</option>
+          <option value="90" selected>Last 90 days</option>
+          <option value="120">Last 120 days</option>
+        </select>
+      </div>
+      <div id="salesRepNeededList">
+        <div class="text-center text-muted">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let dailyActivityChart, formsTypeChart, callsheetStatusChart;
+  let weeklyTrendsChart, dailyHistoryChart, returnReasonsChart;
+
+  function updateDateRange() {
+    const period = document.getElementById("reportPeriod").value;
+    let startDate, endDate;
+
+    switch (period) {
+      case "today":
+        startDate = new Date();
+        endDate = new Date();
+        break;
+      case "yesterday":
+        startDate = new Date();
+        startDate.setDate(startDate.getDate() - 1);
+        endDate = new Date(startDate);
+        break;
+      case "this_week":
+        const thisWeekStart = new Date();
+        thisWeekStart.setDate(
+          thisWeekStart.getDate() - thisWeekStart.getDay() + 1
+        );
+        startDate = thisWeekStart;
+        endDate = new Date();
+        break;
+      case "last_week":
+        const lastWeekStart = new Date();
+        lastWeekStart.setDate(
+          lastWeekStart.getDate() - lastWeekStart.getDay() - 6
+        );
+        const lastWeekEnd = new Date(lastWeekStart);
+        lastWeekEnd.setDate(lastWeekStart.getDate() + 6);
+        startDate = lastWeekStart;
+        endDate = lastWeekEnd;
+        break;
+      case "this_month":
+        startDate = new Date(
+          new Date().getFullYear(),
+          new Date().getMonth(),
+          1
+        );
+        endDate = new Date();
+        break;
+      case "last_month":
+        const lastMonth = new Date();
+        lastMonth.setMonth(lastMonth.getMonth() - 1);
+        startDate = new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 1);
+        endDate = new Date(
+          lastMonth.getFullYear(),
+          lastMonth.getMonth() + 1,
+          0
+        );
+        break;
+      case "custom":
+        return;
+    }
+
+    document.getElementById("startDate").value = formatDate(startDate);
+    document.getElementById("endDate").value = formatDate(endDate);
+  }
+
+  function formatDate(date) {
+    return date.toISOString().split("T")[0];
+  }
+
+  async function loadAllReports() {
+    const startDate = document.getElementById("startDate").value;
+    const endDate = document.getElementById("endDate").value;
+
+    if (!startDate || !endDate) {
+      alert("Please select date range");
+      return;
+    }
+
+    await Promise.all([
+      loadSummary(startDate, endDate),
+      loadDailyActivity(startDate, endDate),
+      loadUserActivity(startDate, endDate),
+      loadMostResponsiveCustomers(),
+      loadCallHistoryAnalytics(startDate, endDate),
+      loadReturnsAnalytics(startDate, endDate),
+      loadProblemCustomers(),
+      loadSalesRepNeeded(),
+    ]);
+  }
+
+  async function loadSummary(startDate, endDate) {
+    try {
+      const response = await fetch(
+        `/admin/api/reports/summary?start_date=${startDate}&end_date=${endDate}`
+      );
+      const data = await response.json();
+
+      document.getElementById("totalFormsCount").textContent = data.forms.total;
+      document.getElementById(
+        "completedFormsBadge"
+      ).textContent = `${data.forms.completed} Completed`;
+      document.getElementById("standingOrdersCount").textContent =
+        data.standing_orders.active;
+      document.getElementById(
+        "newOrdersBadge"
+      ).textContent = `${data.standing_orders.created_this_period} New`;
+      document.getElementById("stockTransactionsCount").textContent =
+        data.stock.total_transactions;
+      document.getElementById("callsheetEntriesCount").textContent =
+        data.callsheets.total_entries;
+
+      updateFormsTypeChart(data.forms.by_type);
+      updateCallsheetStatusChart(data.callsheets.by_status);
+    } catch (error) {
+      console.error("Error loading summary:", error);
+    }
+  }
+
+  async function loadDailyActivity(startDate, endDate) {
+    try {
+      const response = await fetch(
+        `/admin/api/reports/daily-activity?start_date=${startDate}&end_date=${endDate}`
+      );
+      const data = await response.json();
+
+      if (data && data.length > 0) {
+        updateDailyActivityChart(data);
+      }
+    } catch (error) {
+      console.error("Error loading daily activity:", error);
+    }
+  }
+
+  async function loadUserActivity(startDate, endDate) {
+    try {
+      const response = await fetch(
+        `/admin/api/reports/user-activity?start_date=${startDate}&end_date=${endDate}`
+      );
+      const users = await response.json();
+
+      const tableBody = document.getElementById("userActivityTable");
+      tableBody.innerHTML = "";
+
+      if (users.length === 0) {
+        tableBody.innerHTML =
+          '<tr><td colspan="5" class="text-center text-muted">No activity in selected period</td></tr>';
+        return;
+      }
+
+      users.forEach((user) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td><strong>${user.full_name}</strong><br><small class="text-muted">${user.username}</small></td>
+          <td class="text-center">${user.forms_created}</td>
+          <td class="text-center">${user.calls_made}</td>
+          <td class="text-center">${user.stock_transactions}</td>
+          <td class="text-center"><strong>${user.total_activity}</strong></td>
+        `;
+        tableBody.appendChild(row);
+      });
+    } catch (error) {
+      console.error("Error loading user activity:", error);
+    }
+  }
+
+  // Load most responsive customers from callsheet data
+  async function loadMostResponsiveCustomers() {
+    try {
+      // Get current active callsheets
+      const response = await fetch(`/admin/api/reports/callsheet-analytics?start_date=${document.getElementById('startDate').value}&end_date=${document.getElementById('endDate').value}`);
+      const data = await response.json();
+
+      const customers = data.most_responsive || [];
+      const div = document.getElementById("mostResponsiveCustomers");
+      div.innerHTML = "";
+
+      if (customers.length === 0) {
+        div.innerHTML = '<p class="text-muted text-center small">No data available for selected period</p>';
+        return;
+      }
+
+      customers.slice(0, 10).forEach((customer, index) => {
+        const item = document.createElement("div");
+        item.className = "d-flex justify-content-between align-items-center border-bottom py-2";
+        item.innerHTML = `
+          <div>
+            <div><strong>${index + 1}. ${customer.name}</strong></div>
+            <small class="text-muted">${customer.account_number}</small><br>
+            <small class="text-success">${customer.orders}/${customer.total_calls} ordered</small>
+          </div>
+          <span class="badge bg-success rounded-pill">${customer.order_rate}%</span>
+        `;
+        div.appendChild(item);
+      });
+    } catch (error) {
+      console.error("Error loading responsive customers:", error);
+      document.getElementById("mostResponsiveCustomers").innerHTML =
+        '<p class="text-muted text-center small">Error loading data</p>';
+    }
+  }
+
+  async function loadCallHistoryAnalytics(startDate, endDate) {
+    try {
+      const response = await fetch(
+        `/admin/api/reports/call-history-analytics?start_date=${startDate}&end_date=${endDate}`
+      );
+      const data = await response.json();
+
+      document.getElementById('totalCallsHistory').textContent = data.total_calls;
+      document.getElementById('historySuccessRate').textContent = data.success_rate + '%';
+      document.getElementById('historyDeclineRate').textContent = data.decline_rate + '%';
+      document.getElementById('historyNoAnswerRate').textContent = data.no_answer_rate + '%';
+
+      if (data.calls_by_week && data.calls_by_week.length > 0) {
+        updateWeeklyTrendsChart(data.calls_by_week);
+      }
+
+      if (data.daily_trends && data.daily_trends.length > 0) {
+        updateDailyHistoryChart(data.daily_trends);
+      }
+    } catch (error) {
+      console.error('Error loading call history analytics:', error);
+    }
+  }
+
+  async function loadProblemCustomers() {
+    const days = document.getElementById('problemCustomersDays').value;
+    const minCalls = document.getElementById('minCallsFilter').value;
+
+    try {
+      const response = await fetch(
+        `/admin/api/reports/problem-customers?days=${days}&min_calls=${minCalls}`
+      );
+      const data = await response.json();
+
+      document.getElementById('highPriorityCount').textContent =
+        `${data.high_priority} High Priority`;
+      document.getElementById('mediumPriorityCount').textContent =
+        `${data.medium_priority} Medium Priority`;
+
+      const listDiv = document.getElementById('problemCustomersList');
+      listDiv.innerHTML = '';
+
+      if (data.customers.length === 0) {
+        listDiv.innerHTML =
+          '<div class="alert alert-success"><i class="bi bi-check-circle-fill"></i> No problem customers found!</div>';
+        return;
+      }
+
+      const table = document.createElement('table');
+      table.className = 'table table-hover';
+      table.innerHTML = `
+        <thead>
+          <tr>
+            <th>Priority</th>
+            <th>Customer</th>
+            <th>Account</th>
+            <th>Calls</th>
+            <th>Stats</th>
+            <th>Problem Type</th>
+            <th>Recommendation</th>
+            <th>Contact</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      `;
+
+      const tbody = table.querySelector('tbody');
+      data.customers.forEach(customer => {
+        const priorityBadge = customer.priority === 3 ?
+          '<span class="badge bg-danger">HIGH</span>' :
+          '<span class="badge bg-warning">MEDIUM</span>';
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${priorityBadge}</td>
+          <td><strong>${customer.name}</strong><br>
+              <small class="text-muted">${customer.contact_name || 'N/A'}</small></td>
+          <td><small>${customer.account_number}</small></td>
+          <td class="text-center">${customer.total_calls}</td>
+          <td>
+            <small class="d-block text-success">Orders: ${customer.order_rate}%</small>
+            <small class="d-block text-danger">Declined: ${customer.decline_rate}%</small>
+            <small class="d-block text-warning">No Answer: ${customer.no_answer_rate}%</small>
+          </td>
+          <td><span class="badge bg-secondary">${customer.problem_type}</span></td>
+          <td><small>${customer.recommendation}</small></td>
+          <td>
+            <a href="tel:${customer.phone}" class="btn btn-sm btn-outline-primary">
+              <i class="bi bi-telephone"></i>
+            </a>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      listDiv.appendChild(table);
+    } catch (error) {
+      console.error('Error loading problem customers:', error);
+    }
+  }
+
+  async function loadSalesRepNeeded() {
+    const days = document.getElementById('salesRepDays').value;
+
+    try {
+      const response = await fetch(
+        `/admin/api/reports/sales-rep-needed?days=${days}`
+      );
+      const data = await response.json();
+
+      document.getElementById('salesRepHighPriority').textContent = `${data.high_priority} High`;
+      document.getElementById('salesRepMediumPriority').textContent = `${data.medium_priority} Medium`;
+      document.getElementById('salesRepLowPriority').textContent = `${data.low_priority} Low`;
+
+      const listDiv = document.getElementById('salesRepNeededList');
+      listDiv.innerHTML = '';
+
+      if (data.customers.length === 0) {
+        listDiv.innerHTML =
+          '<div class="alert alert-success"><i class="bi bi-check-circle-fill"></i> No customers need sales rep visits!</div>';
+        return;
+      }
+
+      data.customers.forEach(customer => {
+        const priorityColor = customer.priority_score >= 15 ? 'danger' :
+                              customer.priority_score >= 8 ? 'warning' : 'secondary';
+        const priorityLabel = customer.priority_score >= 15 ? 'HIGH' :
+                              customer.priority_score >= 8 ? 'MEDIUM' : 'LOW';
+
+        const card = document.createElement('div');
+        card.className = `card mb-3 border-${priorityColor}`;
+        card.innerHTML = `
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div>
+                <h5 class="mb-1">
+                  ${customer.name}
+                  <span class="badge bg-${priorityColor}">${priorityLabel}</span>
+                </h5>
+                <small class="text-muted">Account: ${customer.account_number}</small>
+              </div>
+              <div class="text-end">
+                <span class="badge bg-info">Score: ${customer.priority_score}</span>
+              </div>
+            </div>
+
+            <div class="row mb-2">
+              <div class="col-md-6">
+                <small class="text-muted d-block">Contact: ${customer.contact_name || 'N/A'}</small>
+                <small class="text-muted d-block">Phone: ${customer.phone || 'N/A'}</small>
+                <small class="text-muted d-block">Address: ${customer.address || 'N/A'}</small>
+              </div>
+              <div class="col-md-6">
+                <small class="d-block">Total Calls: <strong>${customer.total_calls}</strong></small>
+                <small class="d-block text-success">Orders: ${customer.ordered} (${customer.order_rate}%)</small>
+                <small class="d-block text-danger">Declined: ${customer.declined} (${customer.decline_rate}%)</small>
+                <small class="d-block text-warning">No Answer: ${customer.no_answer}</small>
+              </div>
+            </div>
+
+            <div class="alert alert-${priorityColor} mb-2">
+              <strong>Reasons for Sales Rep Visit:</strong>
+              <ul class="mb-0 mt-1">
+                ${customer.reasons.map(reason => `<li>${reason}</li>`).join('')}
+              </ul>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center">
+              <small class="text-muted">Last called: ${customer.days_since_last_call} days ago</small>
+              <a href="tel:${customer.phone}" class="btn btn-sm btn-primary">
+                <i class="bi bi-telephone"></i> Call Customer
+              </a>
+            </div>
+          </div>
+        `;
+        listDiv.appendChild(card);
+      });
+    } catch (error) {
+      console.error('Error loading sales rep needed:', error);
+    }
+  }
+
+  function updateWeeklyTrendsChart(data) {
+    const ctx = document.getElementById('weeklyTrendsChart').getContext('2d');
+
+    if (weeklyTrendsChart) {
+      weeklyTrendsChart.destroy();
+    }
+
+    weeklyTrendsChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: data.map(d => `Week ${d.week}`),
+        datasets: [
+          {
+            label: 'Ordered',
+            data: data.map(d => d.ordered),
+            backgroundColor: 'rgba(40, 167, 69, 0.6)',
+          },
+          {
+            label: 'Declined',
+            data: data.map(d => d.declined),
+            backgroundColor: 'rgba(220, 53, 69, 0.6)',
+          },
+          {
+            label: 'No Answer',
+            data: data.map(d => d.no_answer),
+            backgroundColor: 'rgba(255, 193, 7, 0.6)',
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        scales: {
+          x: { stacked: true },
+          y: { stacked: true, beginAtZero: true },
+        },
+      },
+    });
+  }
+
+  function updateDailyHistoryChart(data) {
+    const ctx = document.getElementById('dailyHistoryChart').getContext('2d');
+
+    if (dailyHistoryChart) {
+      dailyHistoryChart.destroy();
+    }
+
+    dailyHistoryChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: data.map(d => d.date),
+        datasets: [
+          {
+            label: 'Success Rate %',
+            data: data.map(d => d.success_rate),
+            borderColor: '#28a745',
+            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+            fill: true,
+            tension: 0.3,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100,
+            ticks: {
+              callback: function(value) {
+                return value + '%';
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  function updateDailyActivityChart(data) {
+    const ctx = document.getElementById("dailyActivityChart").getContext("2d");
+
+    if (dailyActivityChart) {
+      dailyActivityChart.destroy();
+    }
+
+    dailyActivityChart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: data.map((d) => d.date),
+        datasets: [
+          {
+            label: "Forms",
+            data: data.map((d) => d.forms),
+            borderColor: "#007bff",
+            backgroundColor: "rgba(0, 123, 255, 0.1)",
+            fill: true,
+          },
+          {
+            label: "Callsheets",
+            data: data.map((d) => d.callsheets),
+            borderColor: "#28a745",
+            backgroundColor: "rgba(40, 167, 69, 0.1)",
+            fill: true,
+          },
+          {
+            label: "Stock",
+            data: data.map((d) => d.stock),
+            borderColor: "#ffc107",
+            backgroundColor: "rgba(255, 193, 7, 0.1)",
+            fill: true,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { stepSize: 1 },
+          },
+        },
+      },
+    });
+  }
+
+  function updateFormsTypeChart(data) {
+    const ctx = document.getElementById("formsTypeChart").getContext("2d");
+
+    if (formsTypeChart) {
+      formsTypeChart.destroy();
+    }
+
+    const typeLabels = {
+      returns: "Returns",
+      branded_stock: "Customer's Own Stock",
+      invoice_correction: "Invoiced Goods",
+      special_order: "Special Orders",
+    };
+
+    formsTypeChart = new Chart(ctx, {
+      type: "doughnut",
+      data: {
+        labels: data.map((d) => typeLabels[d.type] || d.type),
+        datasets: [
+          {
+            data: data.map((d) => d.count),
+            backgroundColor: ["#007bff", "#28a745", "#ffc107", "#dc3545"],
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { position: "bottom" },
+        },
+      },
+    });
+  }
+
+  function updateCallsheetStatusChart(data) {
+    const ctx = document
+      .getElementById("callsheetStatusChart")
+      .getContext("2d");
+
+    if (callsheetStatusChart) {
+      callsheetStatusChart.destroy();
+    }
+
+    const statusLabels = {
+      not_called: "Not Called",
+      no_answer: "No Answer",
+      declined: "Declined",
+      ordered: "Ordered",
+      callback: "Callback",
+    };
+
+    const statusColors = {
+      not_called: "#6c757d",
+      no_answer: "#ffc107",
+      declined: "#dc3545",
+      ordered: "#28a745",
+      callback: "#17a2b8",
+    };
+
+    callsheetStatusChart = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: data.map((d) => statusLabels[d.status] || d.status),
+        datasets: [
+          {
+            label: "Call Status",
+            data: data.map((d) => d.count),
+            backgroundColor: data.map(
+              (d) => statusColors[d.status] || "#007bff"
+            ),
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { stepSize: 1 },
+          },
+        },
+      },
+    });
+  }
+
+  async function loadReturnsAnalytics(startDate, endDate) {
+    try {
+      const response = await fetch(
+        `/admin/api/reports/returns-analytics?start_date=${startDate}&end_date=${endDate}`
+      );
+      const data = await response.json();
+
+      document.getElementById('totalReturnsCount').textContent = data.total_returns;
+
+      if (data.reasons && data.reasons.length > 0) {
+        updateReturnReasonsChart(data.reasons);
+      } else {
+        const canvas = document.getElementById('returnReasonsChart');
+        const ctx = canvas.getContext('2d');
+        if (returnReasonsChart) {
+          returnReasonsChart.destroy();
+        }
+        canvas.style.display = 'none';
+      }
+
+      // Populate top returning customers
+      const customersList = document.getElementById('topReturningCustomers');
+      customersList.innerHTML = '';
+
+      if (data.top_customers && data.top_customers.length > 0) {
+        data.top_customers.forEach((customer, index) => {
+          const item = document.createElement('div');
+          item.className = 'd-flex justify-content-between align-items-center border-bottom py-2';
+          item.innerHTML = `
+            <div>
+              <div><strong>${index + 1}. ${customer.customer}</strong></div>
+            </div>
+            <span class="badge bg-warning text-dark">${customer.return_count} returns</span>
+          `;
+          customersList.appendChild(item);
+        });
+      } else {
+        customersList.innerHTML = '<p class="text-muted text-center small">No return data available</p>';
+      }
+    } catch (error) {
+      console.error('Error loading returns analytics:', error);
+      document.getElementById('totalReturnsCount').textContent = 'Error';
+      document.getElementById('topReturningCustomers').innerHTML =
+        '<p class="text-danger text-center small">Error loading data</p>';
+    }
+  }
+
+  function updateReturnReasonsChart(reasons) {
+    const ctx = document.getElementById('returnReasonsChart').getContext('2d');
+
+    if (returnReasonsChart) {
+      returnReasonsChart.destroy();
+    }
+
+    const canvas = document.getElementById('returnReasonsChart');
+    canvas.style.display = 'block';
+
+    returnReasonsChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: reasons.map(r => r.reason),
+        datasets: [{
+          data: reasons.map(r => r.count),
+          backgroundColor: [
+            '#dc3545', // Red for damaged
+            '#ffc107', // Yellow for wrong
+            '#17a2b8', // Cyan for overstock
+            '#6c757d', // Gray for other
+            '#e83e8c'  // Pink for unknown
+          ],
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { position: 'bottom' },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const label = context.label || '';
+                const value = context.parsed || 0;
+                const percentage = reasons[context.dataIndex].percentage;
+                return `${label}: ${value} (${percentage}%)`;
+              }
+            }
+          }
+        },
+      },
+    });
+  }
+
+
+  function exportReport() {
+    const startDate = document.getElementById("startDate").value;
+    const endDate = document.getElementById("endDate").value;
+
+    alert(
+      `Report export functionality would export data from ${startDate} to ${endDate}.\n\nThis can be implemented to generate PDF or Excel reports.`
+    );
+
+    window.print();
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    updateDateRange();
+    loadAllReports();
+  });
+</script>
+
+<style>
+  .card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    margin-bottom: 1rem;
+  }
+
+  .list-group-item {
+    border-left: 3px solid transparent;
+    transition: all 0.2s;
+  }
+
+  .list-group-item:hover {
+    border-left-color: #007bff;
+    background-color: rgba(0, 123, 255, 0.05);
+  }
+
+  .table th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    color: #495057;
+  }
+
+  .table td {
+    color: #212529;
+  }
+
+  /* Improve warning badge contrast */
+  .badge.bg-warning {
+    background-color: #ffc107 !important;
+    color: #000 !important;
+  }
+
+  /* Improve warning text contrast */
+  .text-warning {
+    color: #d39e00 !important;
+  }
+
+  /* Improve alert-warning contrast */
+  .alert-warning {
+    background-color: #fff3cd;
+    border-color: #ffc107;
+    color: #856404 !important;
+  }
+
+  /* Ensure small text in tables is readable */
+  table small.text-muted {
+    color: #6c757d !important;
+  }
+
+  table small.text-success {
+    color: #28a745 !important;
+  }
+
+  table small.text-danger {
+    color: #dc3545 !important;
+  }
+
+  table small.text-warning {
+    color: #d39e00 !important;
+  }
+
+  @media print {
+    .btn,
+    .form-control,
+    .form-select {
+      display: none !important;
+    }
+  }
+</style>
+
+{% endblock %}

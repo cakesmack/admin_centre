@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header mb-4">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <h1 class="h2"><i class="bi bi-tags"></i> Article Categories</h1>
+      <p class="text-muted">Browse articles by category</p>
+    </div>
+    {% if current_user.role == 'admin' %}
+    <button class="btn btn-primary" onclick="showAddCategoryModal()">
+      <i class="bi bi-plus-circle"></i> New Category
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Categories Grid -->
+<div class="row">
+  {% if categories %}
+    {% for category in categories %}
+    <div class="col-md-6 col-lg-4 mb-4">
+      <div class="card h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <h5 class="card-title mb-0">
+              <i class="bi bi-tag-fill"></i> {{ category.name }}
+            </h5>
+            <span class="badge bg-primary">{{ category.article_count }} articles</span>
+          </div>
+
+          {% if category.description %}
+          <p class="card-text text-muted">{{ category.description }}</p>
+          {% endif %}
+
+          <div class="mt-3">
+            <a href="{{ url_for('kb_articles.list_articles', category_id=category.id) }}"
+               class="btn btn-sm btn-outline-primary">
+              <i class="bi bi-book"></i> View Articles
+            </a>
+
+            {% if current_user.role == 'admin' %}
+            <button class="btn btn-sm btn-outline-secondary"
+                    onclick="showEditCategoryModal({{ category.id }}, '{{ category.name }}', '{{ category.description or '' }}')">
+              <i class="bi bi-pencil"></i> Edit
+            </button>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="col-12">
+      <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> No categories yet.
+        {% if current_user.role == 'admin' %}
+        Click "New Category" to create one.
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+<!-- Add/Edit Category Modal -->
+{% if current_user.role == 'admin' %}
+<div class="modal fade" id="categoryModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="categoryModalTitle">
+          <i class="bi bi-tag"></i> <span id="modalTitleText">New Category</span>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="categoryForm">
+          <input type="hidden" id="categoryId">
+
+          <div class="mb-3">
+            <label for="categoryName" class="form-label">Category Name *</label>
+            <input type="text" class="form-control" id="categoryName" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="categoryDescription" class="form-label">Description</label>
+            <textarea class="form-control" id="categoryDescription" rows="3"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="saveCategory()">
+          <i class="bi bi-check-circle"></i> Save Category
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let categoryModal;
+
+document.addEventListener('DOMContentLoaded', function() {
+  categoryModal = new bootstrap.Modal(document.getElementById('categoryModal'));
+});
+
+function showAddCategoryModal() {
+  document.getElementById('categoryModalTitle').querySelector('#modalTitleText').textContent = 'New Category';
+  document.getElementById('categoryId').value = '';
+  document.getElementById('categoryName').value = '';
+  document.getElementById('categoryDescription').value = '';
+  categoryModal.show();
+}
+
+function showEditCategoryModal(id, name, description) {
+  document.getElementById('categoryModalTitle').querySelector('#modalTitleText').textContent = 'Edit Category';
+  document.getElementById('categoryId').value = id;
+  document.getElementById('categoryName').value = name;
+  document.getElementById('categoryDescription').value = description;
+  categoryModal.show();
+}
+
+async function saveCategory() {
+  const id = document.getElementById('categoryId').value;
+  const data = {
+    name: document.getElementById('categoryName').value,
+    description: document.getElementById('categoryDescription').value
+  };
+
+  if (!data.name) {
+    alert('Please enter a category name');
+    return;
+  }
+
+  try {
+    const url = id ? `/kb/categories/api/${id}` : '/kb/categories/api';
+    const method = id ? 'PUT' : 'POST';
+
+    const response = await fetch(url, {
+      method: method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+
+    if (response.ok) {
+      window.location.reload();
+    } else {
+      const result = await response.json();
+      alert('Error: ' + (result.error || 'Failed to save category'));
+    }
+  } catch (error) {
+    alert('Error: ' + error.message);
+  }
+}
+</script>
+{% endif %}
+
+{% endblock %}

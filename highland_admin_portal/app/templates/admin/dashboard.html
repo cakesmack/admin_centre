@@ -1,0 +1,147 @@
+{% extends "base.html" %} {% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-shield-lock-fill"></i> Admin Dashboard</h2>
+  </div>
+
+  <!-- Quick Access Cards -->
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">
+            <i class="bi bi-people-fill text-primary"></i> User Management
+          </h5>
+          <p class="card-text">Manage user accounts and permissions</p>
+          <a href="{{ url_for('main.users') }}" class="btn btn-primary">
+            <i class="bi bi-arrow-right-circle"></i> Manage Users
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">
+            <i class="bi bi-graph-up text-success"></i> Reports & Analytics
+          </h5>
+          <p class="card-text">
+            View detailed reports on portal usage and staff activity
+          </p>
+          <a href="{{ url_for('admin.reports') }}" class="btn btn-success">
+            <i class="bi bi-arrow-right-circle"></i> View Reports
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">
+            <i class="bi bi-box-seam text-info"></i> Product Management
+          </h5>
+          <p class="card-text">Import and manage product catalog</p>
+          <a href="{{ url_for('admin.import_products') }}" class="btn btn-info">
+            <i class="bi bi-upload"></i> Import Products
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">
+            <i class="bi bi-person-rolodex text-warning"></i> Customer
+            Management
+          </h5>
+          <p class="card-text">Import and manage customer database</p>
+          <a
+            href="{{ url_for('admin.import_customers') }}"
+            class="btn btn-warning"
+          >
+            <i class="bi bi-upload"></i> Import Customers
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- System Overview -->
+  <div class="card">
+    <div class="card-header">
+      <h5 class="mb-0"><i class="bi bi-speedometer2"></i> System Overview</h5>
+    </div>
+    <div class="card-body">
+      <div class="row text-center">
+        <div class="col-md-3">
+          <div class="p-3">
+            <h3 class="text-primary" id="totalUsers">-</h3>
+            <small class="text-muted">Total Users</small>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="p-3">
+            <h3 class="text-success" id="activeUsers">-</h3>
+            <small class="text-muted">Active Users</small>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="p-3">
+            <h3 class="text-info" id="totalCustomers">-</h3>
+            <small class="text-muted">Total Customers</small>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="p-3">
+            <h3 class="text-warning" id="totalForms">-</h3>
+            <small class="text-muted">Forms This Month</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Load system overview stats
+  async function loadSystemStats() {
+    try {
+      // Get basic counts
+      const usersResponse = await fetch("/api/users/count");
+      const customersResponse = await fetch("/api/customers/count");
+      const formsResponse = await fetch("/api/forms/count-this-month");
+
+      if (usersResponse.ok) {
+        const usersData = await usersResponse.json();
+        document.getElementById("totalUsers").textContent =
+          usersData.total || 0;
+        document.getElementById("activeUsers").textContent =
+          usersData.active || 0;
+      }
+
+      if (customersResponse.ok) {
+        const customersData = await customersResponse.json();
+        document.getElementById("totalCustomers").textContent =
+          customersData.count || 0;
+      }
+
+      if (formsResponse.ok) {
+        const formsData = await formsResponse.json();
+        document.getElementById("totalForms").textContent =
+          formsData.count || 0;
+      }
+    } catch (error) {
+      console.error("Error loading stats:", error);
+    }
+  }
+
+  // Load stats on page load
+  document.addEventListener("DOMContentLoaded", loadSystemStats);
+</script>
+
+{% endblock %}

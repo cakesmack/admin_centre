@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block content %}
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+
+<div class="page-header mb-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ url_for('kb_articles.list_articles') }}">Articles</a></li>
+      <li class="breadcrumb-item active">{% if article %}Edit Article{% else %}New Article{% endif %}</li>
+    </ol>
+  </nav>
+
+  <h1 class="h2">
+    <i class="bi bi-{% if article %}pencil{% else %}plus-circle{% endif %}"></i>
+    {% if article %}Edit Article{% else %}Create New Article{% endif %}
+  </h1>
+</div>
+
+<div class="row">
+  <div class="col-lg-9">
+    <div class="card">
+      <div class="card-body">
+        <form id="articleForm" method="POST" action="{% if article %}{{ url_for('kb_articles.api_update_article', article_id=article.id) }}{% else %}{{ url_for('kb_articles.api_create_article') }}{% endif %}">
+
+          <!-- Title -->
+          <div class="mb-3">
+            <label for="title" class="form-label">Article Title *</label>
+            <input type="text" class="form-control" id="title" name="title"
+                   value="{% if article %}{{ article.title }}{% endif %}" required>
+          </div>
+
+          <!-- Category -->
+          <div class="mb-3">
+            <label for="category_id" class="form-label">Category</label>
+            <select class="form-select" id="category_id" name="category_id">
+              <option value="">No Category</option>
+              {% for category in categories %}
+              <option value="{{ category.id }}"
+                      {% if article and article.category_id == category.id %}selected{% endif %}>
+                {{ category.name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Body with Rich Text Editor -->
+          <div class="mb-3">
+            <label for="body" class="form-label">Article Content *</label>
+            <div id="editor" style="min-height: 400px; background: white; color: #000;"></div>
+            <input type="hidden" id="body" name="body">
+            <small class="text-muted">Use the toolbar to format your article content.</small>
+          </div>
+
+          <!-- Tags -->
+          <div class="mb-3">
+            <label for="tags" class="form-label">Tags</label>
+            <input type="text" class="form-control" id="tags" name="tags"
+                   value="{% if article %}{{ article.tags }}{% endif %}"
+                   placeholder="Separate tags with commas: safety, procedures, equipment">
+            <small class="text-muted">Comma-separated tags for better searchability.</small>
+          </div>
+
+          <!-- Status (Admin only) -->
+          {% if current_user.role == 'admin' and article %}
+          <div class="mb-3">
+            <label for="status" class="form-label">Status</label>
+            <select class="form-select" id="status" name="status">
+              <option value="draft" {% if article.status == 'draft' %}selected{% endif %}>Draft</option>
+              <option value="pending" {% if article.status == 'pending' %}selected{% endif %}>Pending Review</option>
+              <option value="published" {% if article.status == 'published' %}selected{% endif %}>Published</option>
+            </select>
+          </div>
+          {% endif %}
+
+          <!-- Action Buttons -->
+          <div class="d-flex gap-2 flex-wrap">
+            <button type="submit" class="btn btn-outline-primary" data-action="draft">
+              <i class="bi bi-file-earmark"></i> Save as Draft
+            </button>
+
+            <button type="submit" class="btn btn-success" data-action="review">
+              <i class="bi bi-send"></i> Submit for Review
+            </button>
+
+            <a href="{{ url_for('kb_articles.list_articles') }}" class="btn btn-outline-secondary">
+              <i class="bi bi-x-circle"></i> Cancel
+            </a>
+
+            {% if article and article.status == 'draft' %}
+            <button type="button" class="btn btn-danger ms-auto" onclick="deleteArticle()">
+              <i class="bi bi-trash"></i> Delete
+            </button>
+            {% endif %}
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar with Tips -->
+  <div class="col-lg-3">
+    <div class="card">
+      <div class="card-header">
+        <h6 class="mb-0"><i class="bi bi-lightbulb"></i> Writing Tips</h6>
+      </div>
+      <div class="card-body">
+        <ul class="small mb-0">
+          <li class="mb-2">Use clear, descriptive titles</li>
+          <li class="mb-2">Break content into sections with headings</li>
+          <li class="mb-2">Add relevant tags for search</li>
+          <li class="mb-2">Include examples where helpful</li>
+          <li class="mb-2">Keep language simple and direct</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card mt-3">
+      <div class="card-header">
+        <h6 class="mb-0"><i class="bi bi-text-paragraph"></i> Formatting Tools</h6>
+      </div>
+      <div class="card-body">
+        <p class="small mb-2">Available in the editor:</p>
+        <ul class="small mb-0">
+          <li>Headings (H1-H6)</li>
+          <li>Bold & Italic</li>
+          <li>Bullet & Numbered Lists</li>
+          <li>Links</li>
+          <li>Code Blocks</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+<script>
+// Initialize Quill editor
+var quill = new Quill('#editor', {
+  theme: 'snow',
+  modules: {
+    toolbar: [
+      [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      [{ 'color': [] }, { 'background': [] }],
+      ['link', 'blockquote', 'code-block'],
+      ['clean']
+    ]
+  },
+  placeholder: 'Start writing your article...'
+});
+
+// Load existing content if editing
+{% if article %}
+quill.root.innerHTML = {{ article.body|tojson|safe }};
+{% endif %}
+
+document.getElementById('articleForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+
+  // Get which button was clicked using the submitter property
+  const submitter = e.submitter;
+  const submitAction = submitter ? submitter.getAttribute('data-action') : 'draft';
+
+  console.log('Submit action:', submitAction); // Debug log
+
+  // Get HTML content from Quill editor
+  const htmlContent = quill.root.innerHTML;
+
+  const formData = {
+    title: document.getElementById('title').value,
+    body: htmlContent,
+    category_id: document.getElementById('category_id').value || null,
+    tags: document.getElementById('tags').value,
+  };
+
+  // Set status based on which button was clicked
+  if (submitAction === 'review') {
+    formData.status = 'pending';
+  } else {
+    formData.status = 'draft';
+  }
+
+  {% if current_user.role == 'admin' and article %}
+  // Admin can override status via dropdown
+  if (document.getElementById('status')) {
+    formData.status = document.getElementById('status').value;
+  }
+  {% endif %}
+
+  console.log('Form data being sent:', formData); // Debug log
+
+  try {
+    const response = await fetch(this.action, {
+      method: '{% if article %}PUT{% else %}POST{% endif %}',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(formData)
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      if (submitAction === 'review') {
+        alert('Article submitted for review!');
+      }
+      window.location.href = "{{ url_for('kb_articles.list_articles') }}";
+    } else {
+      alert('Error: ' + (result.error || 'Failed to save article'));
+    }
+  } catch (error) {
+    alert('Error saving article: ' + error.message);
+  }
+});
+</script>
+
+{% endblock %}

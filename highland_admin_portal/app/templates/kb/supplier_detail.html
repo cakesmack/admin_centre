@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header mb-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ url_for('kb_suppliers.list_suppliers') }}">Suppliers</a></li>
+      <li class="breadcrumb-item active">{{ supplier.name }}</li>
+    </ol>
+  </nav>
+</div>
+
+<div class="row">
+  <div class="col-lg-8">
+    <!-- Supplier Details Card -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+          <h1 class="h3 mb-0">
+            <i class="bi bi-truck"></i> {{ supplier.name }}
+          </h1>
+          {% if current_user.role in ['staff', 'admin'] %}
+          <a href="{{ url_for('kb_suppliers.edit_supplier', supplier_id=supplier.id) }}"
+             class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-pencil"></i> Edit
+          </a>
+          {% endif %}
+        </div>
+        {% if supplier.category %}
+        <span class="badge bg-info mt-2">
+          <i class="bi bi-tag"></i> {{ supplier.category }}
+        </span>
+        {% endif %}
+      </div>
+
+      <div class="card-body">
+        <!-- Description -->
+        {% if supplier.description %}
+        <div class="mb-4">
+          <h5><i class="bi bi-info-circle"></i> About</h5>
+          <div class="supplier-description">
+            {{ supplier.description|safe }}
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Contact Information -->
+        <div class="mb-4">
+          <h5><i class="bi bi-person-lines-fill"></i> Contact Information</h5>
+          <div class="row">
+            <div class="col-md-6">
+              {% if supplier.contact_name %}
+              <p class="mb-2">
+                <strong>Contact Person:</strong><br>
+                {{ supplier.contact_name }}
+              </p>
+              {% endif %}
+
+              {% if supplier.phone %}
+              <p class="mb-2">
+                <strong>Phone:</strong><br>
+                <a href="tel:{{ supplier.phone }}" class="text-decoration-none">
+                  <i class="bi bi-telephone"></i> {{ supplier.phone }}
+                </a>
+              </p>
+              {% endif %}
+
+              {% if supplier.email %}
+              <p class="mb-2">
+                <strong>Email:</strong><br>
+                <a href="mailto:{{ supplier.email }}" class="text-decoration-none">
+                  <i class="bi bi-envelope"></i> {{ supplier.email }}
+                </a>
+              </p>
+              {% endif %}
+            </div>
+
+            <div class="col-md-6">
+              {% if supplier.website %}
+              <p class="mb-2">
+                <strong>Website:</strong><br>
+                <a href="{{ supplier.website }}" target="_blank" class="text-decoration-none">
+                  <i class="bi bi-globe"></i> Visit Website
+                </a>
+              </p>
+              {% endif %}
+
+              {% if supplier.address %}
+              <p class="mb-2">
+                <strong>Address:</strong><br>
+                {{ supplier.address|replace('\n', '<br>')|safe }}
+              </p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Additional Notes -->
+        {% if supplier.notes %}
+        <div class="mb-4">
+          <h5><i class="bi bi-sticky"></i> Notes</h5>
+          <div class="alert alert-info">
+            {{ supplier.notes|replace('\n', '<br>')|safe }}
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Metadata -->
+        <div class="border-top pt-3 mt-4">
+          <div class="row text-muted small">
+            <div class="col-md-6">
+              <p class="mb-1">
+                <i class="bi bi-calendar-plus"></i>
+                <strong>Added:</strong> {{ supplier.created_at.strftime('%B %d, %Y') }}
+              </p>
+            </div>
+            <div class="col-md-6">
+              <p class="mb-1">
+                <i class="bi bi-clock"></i>
+                <strong>Last Updated:</strong> {{ supplier.updated_at.strftime('%B %d, %Y') }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="col-lg-4">
+    <!-- Quick Actions -->
+    <div class="card mb-3">
+      <div class="card-header">
+        <h6 class="mb-0"><i class="bi bi-lightning"></i> Quick Actions</h6>
+      </div>
+      <div class="card-body">
+        <div class="d-grid gap-2">
+          {% if supplier.phone %}
+          <a href="tel:{{ supplier.phone }}" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-telephone"></i> Call
+          </a>
+          {% endif %}
+
+          {% if supplier.email %}
+          <a href="mailto:{{ supplier.email }}" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-envelope"></i> Send Email
+          </a>
+          {% endif %}
+
+          {% if supplier.website %}
+          <a href="{{ supplier.website }}" target="_blank" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-globe"></i> Visit Website
+          </a>
+          {% endif %}
+
+          <a href="{{ url_for('kb_suppliers.list_suppliers') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-list"></i> All Suppliers
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Category -->
+    {% if supplier.category %}
+    <div class="card">
+      <div class="card-header">
+        <h6 class="mb-0"><i class="bi bi-tag"></i> Category</h6>
+      </div>
+      <div class="card-body">
+        <span class="badge bg-info">{{ supplier.category }}</span>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<style>
+.supplier-description {
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+
+.supplier-description p {
+  margin-bottom: 1rem;
+}
+
+.supplier-description ul,
+.supplier-description ol {
+  margin-bottom: 1rem;
+  padding-left: 2rem;
+}
+</style>
+
+{% endblock %}

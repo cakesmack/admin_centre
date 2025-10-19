@@ -1,0 +1,167 @@
+{% extends "base.html" %} {% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2>Credit / Uplift Form - #{{ form_id }}</h2>
+  <div>
+    <a
+      href="{{ url_for('forms.print_form', form_id=form_id) }}"
+      class="btn btn-primary"
+      target="_blank"
+    >
+      <i class="bi bi-printer"></i> Print Form
+    </a>
+    <a href="{{ url_for('forms.list_forms') }}" class="btn btn-secondary">
+      <i class="bi bi-arrow-left"></i> Back to Forms
+    </a>
+  </div>
+</div>
+
+<!-- Form Header Card -->
+<div class="card mb-3">
+  <div class="card-header">
+    <div class="row">
+      <div class="col-md-6">
+        <strong>Form ID:</strong> #{{ form_id }}<br />
+        <strong>Submitted By:</strong> {{ author }}
+      </div>
+      <div class="col-md-6 text-md-end">
+        <strong>Date Created:</strong> {{ date_created.strftime('%d/%m/%Y
+        %H:%M') }}<br />
+        <strong>Form Type:</strong> Credit / Uplift Form
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Customer Details Card -->
+<div class="card mb-3">
+  <div class="card-header bg-primary text-white">
+    <h5 class="mb-0"><i class="bi bi-person-badge"></i> Customer Details</h5>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      <div class="col-md-3">
+        <p>
+          <strong>Account Number:</strong> {{ form_data.get('customer_account',
+          'N/A') }}
+        </p>
+      </div>
+      <div class="col-md-3">
+        <p>
+          <strong>Customer Name:</strong> {{ form_data.get('customer_name',
+          'N/A') }}
+        </p>
+      </div>
+      <div class="col-md-3">
+        <p>
+          <strong>Contact Name:</strong> {{ form_data.get('contact_name', 'Not
+          specified') }}
+        </p>
+      </div>
+      <div class="col-md-3">
+        <p>
+          <strong>Address:</strong> {{ form_data.get('customer_address', 'Not
+          specified') }}
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Product Details Card -->
+<div class="card mb-3">
+  <div class="card-header bg-info text-white">
+    <h5 class="mb-0"><i class="bi bi-box"></i> Product Details</h5>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Stock Code</th>
+            <th>Quantity</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if form_data.get('products') %} {% for product in
+          form_data.get('products') %}
+          <tr>
+            <td>{{ product.get('product_code', 'N/A') }}</td>
+            <td>
+              <span class="badge bg-primary"
+                >{{ product.get('quantity', 'N/A') }}</span
+              >
+            </td>
+            <td>{{ product.get('product_name', 'N/A') }}</td>
+          </tr>
+          {% endfor %} {% else %}
+          <!-- Legacy single product support -->
+          <tr>
+            <td>{{ form_data.get('product_code', 'N/A') }}</td>
+            <td>
+              <span class="badge bg-primary"
+                >{{ form_data.get('quantity', 'N/A') }}</span
+              >
+            </td>
+            <td>{{ form_data.get('product_name', 'N/A') }}</td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Return Details Card -->
+<div class="card mb-3">
+  <div class="card-header bg-warning text-dark">
+    <h5 class="mb-0"><i class="bi bi-arrow-return-left"></i> Return Details</h5>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      <div class="col-md-6">
+        <p>
+          <strong>Reason for Return:</strong>
+          {{ form_data.get('reason', 'N/A').replace('_', ' ').title() }}
+        </p>
+      </div>
+      <div class="col-md-6">
+        {% if form_data.get('notes') %}
+        <p><strong>Additional Notes:</strong></p>
+        <div class="alert alert-light">{{ form_data.get('notes') }}</div>
+        {% else %}
+        <p><strong>Additional Notes:</strong> None</p>
+        {% endif %}
+      </div>
+    </div>
+    <div class="alert alert-info mt-3">
+      <strong>Note:</strong> Return type (Credit or Uplift Only) will be
+      selected when the form is printed.
+    </div>
+  </div>
+</div>
+
+<!-- Actions Card -->
+<div class="card">
+  <div class="card-body text-center">
+    <a
+      href="{{ url_for('forms.print_form', form_id=form_id) }}"
+      class="btn btn-lg btn-primary"
+      target="_blank"
+    >
+      <i class="bi bi-printer"></i> Print Form
+    </a>
+    <a href="{{ url_for('forms.list_forms') }}" class="btn btn-lg btn-secondary">
+      <i class="bi bi-list"></i> View All Forms
+    </a>
+    <button
+      class="btn btn-lg btn-warning"
+      onclick="alert('Return type (Credit/Uplift) will be selected when printing the form')"
+    >
+      <i class="bi bi-info-circle"></i> Return Type Info
+    </button>
+  </div>
+</div>
+
+{% endblock %}

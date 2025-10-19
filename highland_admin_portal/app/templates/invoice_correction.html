@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Invoiced Goods - Delivery Only</h2>
+<p class="text-muted">Record invoice discrepancies and delivery corrections</p>
+
+<div class="card mt-4">
+  <div class="card-body">
+    <form method="POST" action="{{ url_for('forms.invoice_correction') }}" id="invoiceCorrectionForm">
+      {{ form.hidden_tag() }}
+
+      <!-- Hidden fields -->
+      <input type="hidden" name="additional_products" id="additional_products" value="">
+      <input type="hidden" name="address_label" id="address_label" value="">
+
+      <!-- Invoice Number -->
+      <div class="row mb-3">
+        <div class="col-md-6">
+          {{ form.invoice_number.label(class="form-label") }}
+          {{ form.invoice_number(class="form-control", placeholder="Enter invoice number...") }}
+        </div>
+      </div>
+
+      <!-- Customer Details -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <h5 class="border-bottom pb-2 mb-3">Customer Details</h5>
+        </div>
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <div class="search-container position-relative">
+            {{ form.customer_account.label(class="form-label") }}
+            {{ form.customer_account(class="form-control", placeholder="Start typing account number...") }}
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="search-container position-relative">
+            {{ form.customer_name.label(class="form-label") }}
+            {{ form.customer_name(class="form-control", placeholder="Start typing customer name...") }}
+          </div>
+        </div>
+        <div class="col-md-4">
+          {{ form.customer_address.label(class="form-label") }}
+          {{ form.customer_address(class="form-control", placeholder="Customer address", readonly=true) }}
+        </div>
+      </div>
+
+      <!-- Address Selection Container -->
+      <div id="addressSelectionContainer" class="address-selection-area mb-3"></div>
+
+      <!-- Product Details -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <h5 class="border-bottom pb-2 mb-3">Product Details</h5>
+        </div>
+      </div>
+
+      <!-- Main Product -->
+      <div class="row mb-3 product-row" id="main-product">
+        <div class="col-md-3">
+          <div class="search-container position-relative">
+            {{ form.product_code.label(class="form-label") }}
+            {{ form.product_code(class="form-control product-code", placeholder="Product code...") }}
+          </div>
+        </div>
+        <div class="col-md-4">
+          {{ form.product_name.label(class="form-label") }}
+          {{ form.product_name(class="form-control product-name", placeholder="Product name") }}
+        </div>
+        <div class="col-md-2">
+          {{ form.ordered_quantity.label(class="form-label") }}
+          {{ form.ordered_quantity(class="form-control", type="number", min="0", placeholder="Ordered") }}
+        </div>
+        <div class="col-md-2">
+          {{ form.delivered_quantity.label(class="form-label") }}
+          {{ form.delivered_quantity(class="form-control", type="number", min="0", placeholder="Delivered") }}
+        </div>
+        <div class="col-md-1">
+          <label class="form-label">Outstanding</label>
+          <input type="number" class="form-control" id="outstanding" readonly style="background-color: #f8f9fa">
+        </div>
+      </div>
+
+      <!-- Additional Products Container -->
+      <div id="additional-products-container"></div>
+
+      <div class="row mb-4">
+        <div class="col-12">
+          <button type="button" class="btn btn-success btn-sm" onclick="addProduct()">
+            <i class="bi bi-plus-circle"></i> Add Another Product
+          </button>
+        </div>
+      </div>
+
+      <!-- Correction Notes -->
+      <div class="row mb-3">
+        <div class="col-12">
+          {{ form.notes.label(class="form-label") }}
+          {{ form.notes(class="form-control", rows="4", placeholder="Details about the correction...") }}
+        </div>
+      </div>
+
+      <div class="d-grid">
+        {{ form.submit(class="btn btn-primary btn-lg") }}
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script type="module">
+  import { 
+    initCustomerSearch, 
+    initProductSearch,
+    getSelectedAddress 
+  } from "/static/js/script.js";
+
+  let additionalProducts = [];
+
+  document.addEventListener("DOMContentLoaded", function () {
+    // Initialize customer search
+    initCustomerSearch({
+      accountInputId: "customer_account",
+      nameInputId: "customer_name",
+      addressInputId: "customer_address",
+      addressContainerId: "addressSelectionContainer"
+    });
+
+    // Initialize product search
+    initProductSearch();
+
+    // Auto-calculate outstanding quantity
+    const orderedInput = document.querySelector('#main-product input[name="ordered_quantity"]');
+    const deliveredInput = document.querySelector('#main-product input[name="delivered_quantity"]');
+    const outstandingInput = document.getElementById('outstanding');
+
+    function calculateOutstanding() {
+      const ordered = parseInt(orderedInput.value) || 0;
+      const delivered = parseInt(deliveredInput.value) || 0;
+      outstandingInput.value = ordered - delivered;
+    }
+
+    orderedInput.addEventListener('input', calculateOutstanding);
+    deliveredInput.addEventListener('input', calculateOutstanding);
+
+    // Handle form submission
+    const form = document.getElementById("invoiceCorrectionForm");
+    if (form) {
+      form.addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        const submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
+        if (submitBtn.disabled) return;
+        submitBtn.disabled = true;
+
+        // Collect additional products
+        updateAdditionalProducts();
+        document.getElementById("additional_products").value = JSON.stringify(additionalProducts);
+
+        
+
+        const formData = new FormData(form);
+
+        try {
+          const response = await fetch(form.action, {
+            method: "POST",
+            body: formData,
+          });
+
+          const responseText = await response.text();
+
+          if (response.ok) {
+            try {
+              const data = JSON.parse(responseText);
+              if (data.success && data.form_id) {
+                window.open(`/print-form/${data.form_id}`, "_blank");
+                window.location.href = "/dashboard";
+              }
+            } catch (e) {
+              const tempDiv = document.createElement("div");
+              tempDiv.innerHTML = responseText;
+              const scripts = tempDiv.getElementsByTagName("script");
+              for (let script of scripts) {
+                eval(script.innerHTML);
+              }
+            }
+          } else {
+            alert("Error submitting form. Please try again.");
+            submitBtn.disabled = false;
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          alert("Error submitting form. Please try again.");
+          submitBtn.disabled = false;
+        }
+      });
+    }
+  });
+
+  // Add new product row
+  window.addProduct = function () {
+    const container = document.getElementById("additional-products-container");
+    
+    const newRow = document.createElement("div");
+    newRow.className = "row mb-3 product-row";
+    newRow.innerHTML = `
+      <div class="col-md-3">
+        <div class="search-container position-relative">
+          <label class="form-label">Product Code</label>
+          <input type="text" class="form-control product-code" placeholder="Code...">
+        </div>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Product Name</label>
+        <input type="text" class="form-control product-name" placeholder="Name">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Ordered</label>
+        <input type="number" class="form-control product-ordered" min="0" value="0">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Delivered</label>
+        <input type="number" class="form-control product-delivered" min="0" value="0">
+      </div>
+      <div class="col-md-1 d-flex align-items-end">
+        <button type="button" class="btn btn-danger" onclick="removeProduct(this)">
+          <i class="bi bi-trash"></i>
+        </button>
+      </div>
+    `;
+
+    container.appendChild(newRow);
+
+    // Initialize product search for the new row
+    initProductSearch(newRow);
+  };
+
+  // Remove product row
+  window.removeProduct = function (button) {
+    button.closest(".product-row").remove();
+  };
+
+  // Collect additional products for submission
+  function updateAdditionalProducts() {
+    additionalProducts = [];
+    const additionalRows = document.querySelectorAll("#additional-products-container .product-row");
+
+    additionalRows.forEach((row) => {
+      const code = row.querySelector(".product-code").value.trim();
+      const name = row.querySelector(".product-name").value.trim();
+      const ordered = row.querySelector(".product-ordered").value;
+      const delivered = row.querySelector(".product-delivered").value;
+
+      if (code && name) {
+        const orderedQty = parseInt(ordered) || 0;
+        const deliveredQty = parseInt(delivered) || 0;
+        
+        additionalProducts.push({
+          product_code: code,
+          product_name: name,
+          ordered_quantity: orderedQty,
+          delivered_quantity: deliveredQty,
+          outstanding: orderedQty - deliveredQty
+        });
+      }
+    });
+  }
+</script>
+{% endblock %}

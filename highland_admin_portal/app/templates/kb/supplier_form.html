@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header mb-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ url_for('kb_suppliers.list_suppliers') }}">Suppliers</a></li>
+      <li class="breadcrumb-item active">{% if supplier %}Edit Supplier{% else %}New Supplier{% endif %}</li>
+    </ol>
+  </nav>
+
+  <h1 class="h2">
+    <i class="bi bi-{% if supplier %}pencil{% else %}plus-circle{% endif %}"></i>
+    {% if supplier %}Edit Supplier{% else %}Add New Supplier{% endif %}
+  </h1>
+</div>
+
+<div class="row">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-body">
+        <form id="supplierForm" method="POST"
+              action="{% if supplier %}{{ url_for('kb_suppliers.api_update_supplier', supplier_id=supplier.id) }}{% else %}{{ url_for('kb_suppliers.api_create_supplier') }}{% endif %}">
+
+          <!-- Name -->
+          <div class="mb-3">
+            <label for="name" class="form-label">Supplier Name *</label>
+            <input type="text" class="form-control" id="name" name="name"
+                   value="{% if supplier %}{{ supplier.name }}{% endif %}" required>
+          </div>
+
+          <!-- Category -->
+          <div class="mb-3">
+            <label for="category" class="form-label">Category</label>
+            <input type="text" class="form-control" id="category" name="category"
+                   value="{% if supplier %}{{ supplier.category }}{% endif %}"
+                   placeholder="e.g., Cleaning Products, Catering, PPE">
+            <small class="text-muted">Product or service category</small>
+          </div>
+
+          <!-- Description -->
+          <div class="mb-3">
+            <label for="description" class="form-label">Description</label>
+            <textarea class="form-control" id="description" name="description" rows="6">{% if supplier %}{{ supplier.description }}{% endif %}</textarea>
+            <small class="text-muted">Brief description of products/services. HTML formatting supported.</small>
+          </div>
+
+          <hr class="my-4">
+          <h5 class="mb-3"><i class="bi bi-person-lines-fill"></i> Contact Information</h5>
+
+          <!-- Contact Name -->
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="contact_name" class="form-label">Contact Person</label>
+              <input type="text" class="form-control" id="contact_name" name="contact_name"
+                     value="{% if supplier %}{{ supplier.contact_name }}{% endif %}">
+            </div>
+
+            <!-- Phone -->
+            <div class="col-md-6 mb-3">
+              <label for="phone" class="form-label">Phone Number</label>
+              <input type="tel" class="form-control" id="phone" name="phone"
+                     value="{% if supplier %}{{ supplier.phone }}{% endif %}">
+            </div>
+          </div>
+
+          <!-- Email -->
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="email" class="form-label">Email</label>
+              <input type="email" class="form-control" id="email" name="email"
+                     value="{% if supplier %}{{ supplier.email }}{% endif %}">
+            </div>
+
+            <!-- Website -->
+            <div class="col-md-6 mb-3">
+              <label for="website" class="form-label">Website</label>
+              <input type="url" class="form-control" id="website" name="website"
+                     value="{% if supplier %}{{ supplier.website }}{% endif %}"
+                     placeholder="https://">
+            </div>
+          </div>
+
+          <!-- Address -->
+          <div class="mb-3">
+            <label for="address" class="form-label">Address</label>
+            <textarea class="form-control" id="address" name="address" rows="3">{% if supplier %}{{ supplier.address }}{% endif %}</textarea>
+          </div>
+
+          <!-- Notes -->
+          <div class="mb-3">
+            <label for="notes" class="form-label">Additional Notes</label>
+            <textarea class="form-control" id="notes" name="notes" rows="4">{% if supplier %}{{ supplier.notes }}{% endif %}</textarea>
+            <small class="text-muted">Internal notes, special terms, ordering instructions, etc.</small>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-check-circle"></i> Save Supplier
+            </button>
+
+            <a href="{{ url_for('kb_suppliers.list_suppliers') }}" class="btn btn-outline-secondary">
+              <i class="bi bi-x-circle"></i> Cancel
+            </a>
+
+            {% if supplier and current_user.role == 'admin' %}
+            <button type="button" class="btn btn-outline-danger ms-auto" onclick="deleteSupplier()">
+              <i class="bi bi-trash"></i> Delete
+            </button>
+            {% endif %}
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar with Tips -->
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header">
+        <h6 class="mb-0"><i class="bi bi-lightbulb"></i> Tips</h6>
+      </div>
+      <div class="card-body">
+        <ul class="small mb-0">
+          <li class="mb-2">Use clear, official company name</li>
+          <li class="mb-2">Include direct contact information</li>
+          <li class="mb-2">Add ordering details in notes</li>
+          <li class="mb-2">Mention account numbers if applicable</li>
+          <li class="mb-2">Note delivery schedules or minimums</li>
+        </ul>
+      </div>
+    </div>
+
+    {% if supplier %}
+    <div class="card mt-3">
+      <div class="card-header">
+        <h6 class="mb-0"><i class="bi bi-info-circle"></i> Info</h6>
+      </div>
+      <div class="card-body small">
+        <p class="mb-2">
+          <strong>Created:</strong><br>
+          {{ supplier.created_at.strftime('%B %d, %Y') }}
+        </p>
+        <p class="mb-0">
+          <strong>Last Updated:</strong><br>
+          {{ supplier.updated_at.strftime('%B %d, %Y') }}
+        </p>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+document.getElementById('supplierForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+
+  const formData = {
+    name: document.getElementById('name').value,
+    category: document.getElementById('category').value,
+    description: document.getElementById('description').value,
+    contact_name: document.getElementById('contact_name').value,
+    phone: document.getElementById('phone').value,
+    email: document.getElementById('email').value,
+    website: document.getElementById('website').value,
+    address: document.getElementById('address').value,
+    notes: document.getElementById('notes').value,
+  };
+
+  try {
+    const response = await fetch(this.action, {
+      method: '{% if supplier %}PUT{% else %}POST{% endif %}',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(formData)
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      window.location.href = "{{ url_for('kb_suppliers.list_suppliers') }}";
+    } else {
+      alert('Error: ' + (result.error || 'Failed to save supplier'));
+    }
+  } catch (error) {
+    alert('Error saving supplier: ' + error.message);
+  }
+});
+
+{% if supplier and current_user.role == 'admin' %}
+async function deleteSupplier() {
+  if (!confirm('Are you sure you want to delete this supplier? This cannot be undone.')) {
+    return;
+  }
+
+  try {
+    const response = await fetch('/kb/suppliers/api/{{ supplier.id }}', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+
+    if (response.ok || response.status === 204) {
+      window.location.href = "{{ url_for('kb_suppliers.list_suppliers') }}";
+    } else {
+      const result = await response.json();
+      alert('Error: ' + (result.error || 'Failed to delete supplier'));
+    }
+  } catch (error) {
+    alert('Error deleting supplier: ' + error.message);
+  }
+}
+{% endif %}
+</script>
+
+{% endblock %}

@@ -1,0 +1,805 @@
+from app import db, login_manager
+from flask_login import UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+class User(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(20), unique=True, nullable=False)  # Keep for system use
+    email = db.Column(db.String(120), unique=True, nullable=False, index=True)  # Primary identifier
+    full_name = db.Column(db.String(100), nullable=False)
+    password_hash = db.Column(db.String(128), nullable=False)  # Changed from 'password' to 'password_hash'
+    role = db.Column(db.String(20), nullable=False)
+    
+    # New fields for user management
+    job_title = db.Column(db.String(100))
+    direct_phone = db.Column(db.String(20))
+    mobile_phone = db.Column(db.String(20))
+    is_active = db.Column(db.Boolean, default=True)
+    must_change_password = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    last_login = db.Column(db.DateTime)
+    
+    # Existing relationships...
+    forms = db.relationship('Form', foreign_keys='Form.user_id', backref='author', lazy=True)
+    callsheet_entries = db.relationship('CallsheetEntry', backref='entered_by', lazy=True)
+    callsheets_created = db.relationship('Callsheet', backref='created_by_user', lazy=True)
+    todo_items = db.relationship('TodoItem', backref='user', lazy=True, cascade='all, delete-orphan')
+    company_updates = db.relationship('CompanyUpdate', backref='author', lazy=True, cascade='all, delete-orphan')
+    
+    def set_password(self, password):
+        """Set password hash from plain password"""
+        self.password_hash = generate_password_hash(password)
+    
+    def check_password(self, password):
+        """Check if provided password matches hash"""
+        if not self.password_hash:
+            # Handle case where password_hash is None or empty
+            logger.warning(f"User {self.username} has no password hash")
+            return False
+
+        try:
+            return check_password_hash(self.password_hash, password)
+        except (ValueError, AttributeError) as e:
+            logger.error(f"Error checking password for user {self.username}: {e}", exc_info=True)
+            return False
+    
+    def generate_temp_password(self):
+        """Generate a secure temporary password"""
+        import secrets
+        import string
+        chars = string.ascii_letters + string.digits + "!@#$%^&*"
+        temp_password = ''.join(secrets.choice(chars) for _ in range(12))
+        return temp_password
+    
+    # Replace the get_recent_activity method in your User model (app/models.py)
+
+    def get_recent_activity(self, limit=10):
+        activities = []
+        
+        try:
+            # Recent forms created by this user
+            recent_forms = Form.query.filter_by(user_id=self.id).order_by(Form.date_created.desc()).limit(5).all()
+            for form in recent_forms:
+                activities.append({
+                    'type': 'form_created',
+                    'description': f'Created {form.type.replace("_", " ").title()} form',
+                    'date': form.date_created,
+                    'link': f'/form/{form.id}'
+                })
+        except Exception as e:
+            logger.error(f"Error loading forms for user {self.id}: {e}", exc_info=True)
+
+        try:
+            # Recent company updates by this user
+            recent_updates = CompanyUpdate.query.filter_by(user_id=self.id).order_by(CompanyUpdate.created_at.desc()).limit(3).all()
+            for update in recent_updates:
+                activities.append({
+                    'type': 'company_update',
+                    'description': f'Posted company update: {update.title}',
+                    'date': update.created_at,
+                    'link': None
+                })
+        except Exception as e:
+            logger.error(f"Error loading company updates for user {self.id}: {e}", exc_info=True)
+
+        try:
+            # Recent callsheet activity by this user
+            # Note: Fixed the relationship issue by using proper query
+            recent_callsheet_entries = CallsheetEntry.query.filter_by(user_id=self.id).order_by(CallsheetEntry.updated_at.desc()).limit(3).all()
+            for entry in recent_callsheet_entries:
+                activities.append({
+                    'type': 'callsheet_update',
+                    'description': f'Updated callsheet entry for {entry.customer.name}',
+                    'date': entry.updated_at,
+                    'link': '/callsheets'
+                })
+        except Exception as e:
+            logger.error(f"Error loading callsheet entries for user {self.id}: {e}", exc_info=True)
+        
+        try:
+            # Recent forms completed by this user
+            recent_completed_forms = Form.query.filter_by(completed_by=self.id).filter(
+                Form.completed_date.isnot(None)
+            ).order_by(Form.completed_date.desc()).limit(3).all()
+            
+            for form in recent_completed_forms:
+                activities.append({
+                    'type': 'form_completed',
+                    'description': f'Completed {form.type.replace("_", " ").title()} form',
+                    'date': form.completed_date,
+                    'link': f'/form/{form.id}'
+                })
+        except Exception as e:
+            logger.error(f"Error loading completed forms for user {self.id}: {e}", exc_info=True)
+
+        # Try to load standing order activities if the models exist
+        try:
+            # Recent standing order creation
+            if 'StandingOrder' in globals():
+                recent_standing_orders = StandingOrder.query.filter_by(created_by=self.id).order_by(StandingOrder.created_at.desc()).limit(3).all()
+                for order in recent_standing_orders:
+                    activities.append({
+                        'type': 'standing_order_created',
+                        'description': f'Created standing order for {order.customer.name}',
+                        'date': order.created_at,
+                        'link': f'/standing-orders/{order.id}'
+                    })
+        except Exception as e:
+            logger.error(f"Error loading standing orders for user {self.id}: {e}", exc_info=True)
+        
+        try:
+            # Recent standing order actions if the models exist
+            if 'StandingOrderLog' in globals():
+                recent_so_logs = StandingOrderLog.query.filter_by(performed_by=self.id).filter(
+                    StandingOrderLog.action_type.in_(['paused', 'resumed', 'ended'])
+                ).order_by(StandingOrderLog.performed_at.desc()).limit(3).all()
+                
+                for log in recent_so_logs:
+                    action_descriptions = {
+                        'paused': f'Paused standing order for {log.standing_order.customer.name}',
+                        'resumed': f'Resumed standing order for {log.standing_order.customer.name}',
+                        'ended': f'Ended standing order for {log.standing_order.customer.name}'
+                    }
+                    
+                    activities.append({
+                        'type': f'standing_order_{log.action_type}',
+                        'description': action_descriptions.get(log.action_type, f'{log.action_type.title()} standing order'),
+                        'date': log.performed_at,
+                        'link': f'/standing-orders/{log.standing_order_id}'
+                    })
+        except Exception as e:
+            logger.error(f"Error loading standing order logs for user {self.id}: {e}", exc_info=True)
+
+        try:
+            # Recent stock transactions if the models exist
+            if 'StockTransaction' in globals():
+                recent_stock_transactions = StockTransaction.query.filter_by(created_by=self.id).order_by(StockTransaction.transaction_date.desc()).limit(3).all()
+                for transaction in recent_stock_transactions:
+                    transaction_types = {
+                        'stock_in': 'Added stock for',
+                        'stock_out': 'Processed stock order for',
+                        'adjustment': 'Adjusted stock for'
+                    }
+
+                    description = transaction_types.get(transaction.transaction_type, 'Updated stock for')
+                    activities.append({
+                        'type': f'stock_{transaction.transaction_type}',
+                        'description': f'{description} {transaction.stock_item.customer.name}',
+                        'date': transaction.transaction_date,
+                        'link': '/customer-stock'
+                    })
+        except Exception as e:
+            logger.error(f"Error loading stock transactions for user {self.id}: {e}", exc_info=True)
+        
+        # Sort by date and return limited results
+        activities.sort(key=lambda x: x['date'], reverse=True)
+        return activities[:limit]
+
+class TodoItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    text = db.Column(db.String(200), nullable=False)
+    completed = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+class CompanyUpdate(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    priority = db.Column(db.String(20), default='normal')  # normal, important, urgent
+    is_event = db.Column(db.Boolean, default=False)  # True for calendar events
+    event_date = db.Column(db.DateTime, nullable=True)  # For events/meetings
+    sticky = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    category = db.Column(db.String(50), default='general')
+
+class Customer(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    account_number = db.Column(db.String(20), unique=True, nullable=False, index=True)
+    name = db.Column(db.String(100), nullable=False, index=True)
+    contact_name = db.Column(db.String(100))
+    phone = db.Column(db.String(20))  # Main phone number for the account
+    email = db.Column(db.String(100))
+    # DEPRECATED: Keep for backward compatibility, but use addresses relationship instead
+    address = db.Column(db.String(200))
+    notes = db.Column(db.Text)
+    callsheet_notes = db.Column(db.Text)  # Persistent across all callsheets
+    # Relationships
+    addresses = db.relationship('CustomerAddress', backref='customer', lazy=True, cascade='all, delete-orphan')
+
+    __table_args__ = (
+        db.Index('idx_customer_account', 'account_number'),
+        db.Index('idx_customer_name', 'name'),
+    )
+
+    def to_dict(self):
+        """Convert customer to dictionary with addresses"""
+        # Get addresses or create default from legacy address field
+        addresses_list = []
+        if self.addresses:
+            addresses_list = [addr.to_dict() for addr in self.addresses]
+        elif self.address:
+            # Backward compatibility: convert old single address to new format
+            addresses_list = [{
+                'id': None,
+                'label': 'Primary',
+                'phone': '',
+                'street': self.address,
+                'city': '',
+                'zip': '',
+                'is_primary': True
+            }]
+        
+        return {
+            'id': self.id,
+            'account_number': self.account_number,
+            'name': self.name,
+            'contact_name': self.contact_name,
+            'phone': self.phone,  # Main phone number
+            'email': self.email,
+            'address': self.address,  # Legacy field
+            'addresses': addresses_list,  # New multi-address support
+            'notes': self.notes,
+            'callsheet_notes': self.callsheet_notes
+        }
+    
+    def get_primary_address(self):
+        """Get the primary address or the first address"""
+        if not self.addresses:
+            return None
+        
+        # Try to find primary address
+        for addr in self.addresses:
+            if addr.is_primary:
+                return addr
+        
+        # Return first address if no primary is set
+        return self.addresses[0] if self.addresses else None
+    
+    def get_address_by_label(self, label):
+        """Get address by its label"""
+        for addr in self.addresses:
+            if addr.label == label:
+                return addr
+        return None
+
+class CustomerAddress(db.Model):
+    """Model for customer addresses - allows multiple addresses per customer"""
+    __tablename__ = 'customer_address'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False)
+    label = db.Column(db.String(100), nullable=False)  # e.g., "Morangie House", "Mansfield Castle"
+    phone = db.Column(db.String(20))  # Phone number specific to this location
+    street = db.Column(db.String(200))
+    city = db.Column(db.String(100))
+    zip = db.Column(db.String(20))  # Postcode
+    is_primary = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'label': self.label,
+            'phone': self.phone,
+            'street': self.street,
+            'city': self.city,
+            'zip': self.zip,
+            'is_primary': self.is_primary
+        }
+
+class Product(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(50), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
+
+    __table_args__ = (
+        db.Index('idx_product_code', 'code'),
+        db.Index('idx_product_name', 'name'),
+    )
+
+class Callsheet(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)  
+    day_of_week = db.Column(db.String(10), nullable=False)  # Monday-Friday only
+    month = db.Column(db.Integer, nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    entries = db.relationship('CallsheetEntry', backref='callsheet', lazy=True, cascade='all, delete-orphan')
+    
+    def __repr__(self):
+        return f'<Callsheet {self.name} - {self.day_of_week}>'
+
+class CallsheetEntry(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    callsheet_id = db.Column(db.Integer, db.ForeignKey('callsheet.id'), nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id', name='fk_customer_address_customer'), nullable=False)
+    
+    # NEW: Store which address/location this entry is for
+    address_id = db.Column(db.Integer, db.ForeignKey('customer_address.id', name='fk_callsheet_entry_address'), nullable=True)
+    address_label = db.Column(db.String(100), nullable=True)
+    customer = db.relationship('Customer', backref='callsheet_entries')
+    address = db.relationship('CustomerAddress', foreign_keys=[address_id])
+    call_status = db.Column(db.String(20), default='not_called')
+    
+    called_by = db.Column(db.String(100))  
+    call_date = db.Column(db.DateTime)
+    
+    person_spoken_to = db.Column(db.String(100))
+    
+    callback_time = db.Column(db.String(50))
+    
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    position = db.Column(db.Integer, default=0)
+    
+    is_paused = db.Column(db.Boolean, default=False)
+    
+    # Relationship to address
+    address = db.relationship('CustomerAddress', foreign_keys=[address_id])
+    
+    def get_status_badge(self):
+        status_badges = {
+            'not_called': 'secondary',
+            'no_answer': 'warning',
+            'declined': 'danger',
+            'ordered': 'success',
+            'callback': 'info'
+        }
+        return status_badges.get(self.call_status, 'secondary')
+    
+    def get_status_display(self):
+        status_display = {
+            'not_called': 'Not Called',
+            'no_answer': 'No Answer',
+            'declined': 'Declined',
+            'ordered': 'Ordered',
+            'callback': 'Callback'
+        }
+        return status_display.get(self.call_status, 'Not Called')
+
+    __table_args__ = (
+        db.Index('idx_callsheet_position', 'callsheet_id', 'position'),
+        db.Index('idx_callsheet_status', 'callsheet_id', 'is_paused'),
+    )
+
+class CallHistory(db.Model):
+    """Track every call attempt for analysis and reporting"""
+    __tablename__ = 'call_history'
+
+    id = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False, index=True)
+    callsheet_id = db.Column(db.Integer, db.ForeignKey('callsheet.id'), nullable=True)
+
+    # Call details
+    call_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, index=True)
+    call_status = db.Column(db.String(20), nullable=False)  # no_answer, declined, ordered, callback
+    called_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    person_spoken_to = db.Column(db.String(100))
+
+    # Week/Month tracking for patterns
+    week_number = db.Column(db.Integer, index=True)  # ISO week number
+    year = db.Column(db.Integer, index=True)
+
+    # Relationships
+    customer = db.relationship('Customer', backref='call_history')
+    caller = db.relationship('User', backref='calls_made')
+
+    __table_args__ = (
+        db.Index('idx_call_history_customer_date', 'customer_id', 'call_date'),
+        db.Index('idx_call_history_status', 'call_status'),
+        db.Index('idx_call_history_week', 'year', 'week_number'),
+    )
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'customer_id': self.customer_id,
+            'customer_name': self.customer.name,
+            'customer_account': self.customer.account_number,
+            'call_date': self.call_date.isoformat(),
+            'call_status': self.call_status,
+            'called_by': self.caller.username,
+            'person_spoken_to': self.person_spoken_to,
+            'week_number': self.week_number,
+            'year': self.year
+        }
+
+class CallsheetArchive(db.Model):
+    """Store archived callsheet data for historical viewing"""
+    id = db.Column(db.Integer, primary_key=True)
+    month = db.Column(db.Integer, nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+    data = db.Column(db.Text, nullable=False)  # JSON string
+    archived_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    archived_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    archived_by_user = db.relationship('User', backref='archived_callsheets')
+
+class Form(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    type = db.Column(db.String(50), nullable=False)
+    data = db.Column(db.Text, nullable=False)
+    date_created = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    
+    # New fields for completion tracking
+    is_completed = db.Column(db.Boolean, default=False)
+    completed_date = db.Column(db.DateTime, nullable=True)
+    completed_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    is_archived = db.Column(db.Boolean, default=False)
+    
+    # Define the completer relationship separately
+    completer = db.relationship('User', foreign_keys=[completed_by], backref='completed_forms')
+
+    __table_args__ = (
+        db.Index('idx_form_user_date', 'user_id', 'date_created'),
+        db.Index('idx_form_status', 'is_completed', 'is_archived'),
+        db.Index('idx_form_type', 'type'),
+    )
+
+class CustomerStock(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False)
+    product_code = db.Column(db.String(50), nullable=True)  # Changed to nullable=True
+    product_name = db.Column(db.String(100), nullable=False)
+    current_stock = db.Column(db.Integer, nullable=False, default=0)
+    reorder_level = db.Column(db.Integer, default=5)  # Alert when stock gets low
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    customer = db.relationship('Customer', backref=db.backref('stock_items', lazy=True))
+    transactions = db.relationship('StockTransaction', backref='stock_item', lazy=True, cascade='all, delete-orphan')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'customer_id': self.customer_id,
+            'customer_name': self.customer.name,
+            'product_code': self.product_code,
+            'product_name': self.product_name,
+            'current_stock': self.current_stock,
+            'reorder_level': self.reorder_level,
+            'is_low_stock': self.current_stock <= self.reorder_level
+        }
+
+class StockTransaction(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    stock_item_id = db.Column(db.Integer, db.ForeignKey('customer_stock.id'), nullable=False)
+    transaction_type = db.Column(db.String(20), nullable=False)  # 'stock_in', 'stock_out', 'adjustment'
+    quantity = db.Column(db.Integer, nullable=False)
+    reference = db.Column(db.String(100))  # Order number, delivery note, etc.
+    notes = db.Column(db.Text)
+    transaction_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    
+    # Relationships
+    user = db.relationship('User', backref='stock_transactions')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'transaction_type': self.transaction_type,
+            'quantity': self.quantity,
+            'reference': self.reference,
+            'notes': self.notes,
+            'transaction_date': self.transaction_date.isoformat(),
+            'created_by': self.user.username
+        }
+
+class StandingOrder(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False)
+    
+    # Weekly delivery schedule (store as comma-separated day numbers: 0=Monday, 6=Sunday)
+    delivery_days = db.Column(db.String(20), nullable=False)  # e.g., "0,3" for Monday & Thursday
+    
+    start_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date, nullable=True)  # Null means ongoing
+    
+    status = db.Column(db.String(20), default='active')  # active, paused, ended
+    
+    # Special instructions for this standing order
+    special_instructions = db.Column(db.Text)
+    
+    # Tracking
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    WEEKDAYS = list(range(5))  # 0=Monday through 4=Friday
+    WEEKDAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+    WEEKEND_ERROR_MESSAGE = 'Weekend deliveries are not supported. Please select Monday through Friday only.'
+
+    # Relationships
+    customer = db.relationship('Customer', backref='standing_orders')
+    created_by_user = db.relationship('User', backref='created_standing_orders')
+    items = db.relationship('StandingOrderItem', backref='standing_order', cascade='all, delete-orphan')
+    schedules = db.relationship('StandingOrderSchedule', backref='standing_order', cascade='all, delete-orphan')
+    logs = db.relationship('StandingOrderLog', backref='standing_order', cascade='all, delete-orphan')
+    
+    
+
+    def get_delivery_days_list(self):
+        """Return list of day numbers (weekdays only)"""
+        if not self.delivery_days:
+            return []
+        
+        try:
+            days = [int(d) for d in self.delivery_days.split(',')]
+            # Filter using WEEKDAYS constant
+            return [d for d in days if d in self.WEEKDAYS]
+        except (ValueError, AttributeError):
+            return []
+    
+    def get_delivery_days_names(self):
+        """Return readable day names (weekdays only)"""
+        day_numbers = self.get_delivery_days_list()
+        return [self.WEEKDAY_NAMES[d] for d in day_numbers if d < len(self.WEEKDAY_NAMES)]
+    
+    @classmethod
+    def validate_delivery_days(cls, delivery_days):
+        """
+        Validate that only weekdays are selected.
+        Returns (is_valid, error_message)
+        """
+        if not delivery_days:
+            return False, 'At least one delivery day must be selected'
+        
+        try:
+            days = [int(d) for d in delivery_days]
+            weekend_days = [d for d in days if d not in cls.WEEKDAYS]
+            
+            if weekend_days:
+                return False, cls.WEEKEND_ERROR_MESSAGE
+            
+            return True, None
+        except (ValueError, TypeError):
+            return False, 'Invalid delivery days format'
+    
+    @classmethod
+    def clean_delivery_days(cls, delivery_days):
+        """
+        Remove any weekend days and return cleaned list.
+        Use this when saving to database.
+        """
+        try:
+            days = [int(d) for d in delivery_days]
+            return [d for d in days if d in cls.WEEKDAYS]
+        except (ValueError, TypeError):
+            return []
+    
+    @classmethod
+    def is_weekday(cls, date_obj):
+        """Check if a given date is a weekday (Mon-Fri)"""
+        return date_obj.weekday() in cls.WEEKDAYS   
+   
+class StandingOrderItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    standing_order_id = db.Column(db.Integer, db.ForeignKey('standing_order.id'), nullable=False)
+    
+    product_code = db.Column(db.String(50), nullable=False)
+    product_name = db.Column(db.String(100), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    unit_type = db.Column(db.String(20), default='units')  # units, cases, boxes, etc.
+    
+    special_notes = db.Column(db.Text)  # Item-specific notes
+    
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+class StandingOrderSchedule(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    standing_order_id = db.Column(db.Integer, db.ForeignKey('standing_order.id'), nullable=False)
+    
+    scheduled_date = db.Column(db.Date, nullable=False)
+    status = db.Column(db.String(20), default='pending')  # pending, created, skipped
+    
+    # Track when the actual order was created
+    order_created_date = db.Column(db.DateTime, nullable=True)
+    order_created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    
+    # Optional order reference from main system
+    order_reference = db.Column(db.String(50))
+    
+    notes = db.Column(db.Text)
+    
+    # Relationships
+    created_by_user = db.relationship('User', backref='created_orders_from_standing')
+    
+    # Unique constraint to prevent duplicate schedules
+    __table_args__ = (
+        db.UniqueConstraint('standing_order_id', 'scheduled_date'),
+        db.Index('idx_schedule_date_status', 'scheduled_date', 'status'),
+    )
+
+class StandingOrderLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    standing_order_id = db.Column(db.Integer, db.ForeignKey('standing_order.id'), nullable=False)
+    
+    action_type = db.Column(db.String(50), nullable=False)  # created, modified, paused, resumed, ended, item_added, item_removed, etc.
+    action_details = db.Column(db.Text)  # JSON string with details of the change
+    
+    performed_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    performed_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship('User', backref='standing_order_actions')
+
+class ClearanceStock(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    qty = db.Column(db.Integer, nullable=False)
+    qty_sold = db.Column(db.Integer, default=0)
+    supplier_code = db.Column(db.String(50), nullable=False)
+    his_code = db.Column(db.String(50))
+    description = db.Column(db.String(200), nullable=False)
+    cost_price = db.Column(db.Float, nullable=False)
+    total_price = db.Column(db.Float)
+    supplier_link = db.Column(db.String(500))
+    pallet = db.Column(db.String(50))
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+    user = db.relationship('User', backref='clearance_items')
+
+    __table_args__ = (
+        db.Index('idx_clearance_supplier_code', 'supplier_code'),
+        db.Index('idx_clearance_his_code', 'his_code'),
+        db.Index('idx_clearance_pallet', 'pallet'),
+    )
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'qty': self.qty,
+            'qty_sold': self.qty_sold,
+            'supplier_code': self.supplier_code,
+            'his_code': self.his_code,
+            'description': self.description,
+            'cost_price': self.cost_price,
+            'total_price': self.total_price,
+            'supplier_link': self.supplier_link,
+            'pallet': self.pallet,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
+# ============================================================================
+# Knowledge Base Models
+# ============================================================================
+
+class Supplier(db.Model):
+    """Supplier model for knowledge base"""
+    __tablename__ = 'supplier'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False, unique=True)
+    website = db.Column(db.String(200))
+    contact_info = db.Column(db.Text)
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    articles = db.relationship('Article', backref='supplier', lazy=True)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'website': self.website,
+            'contact_info': self.contact_info,
+            'notes': self.notes,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
+class Category(db.Model):
+    """Category model for knowledge base articles"""
+    __tablename__ = 'category'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False, unique=True)
+    description = db.Column(db.Text)
+    color = db.Column(db.String(20), default='#3B82F6')  # Hex color for UI
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    # Relationships
+    articles = db.relationship('Article', backref='category', lazy=True)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'color': self.color,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+class Article(db.Model):
+    """Knowledge base article model"""
+    __tablename__ = 'article'
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    body = db.Column(db.Text, nullable=False)
+
+    # Categorization
+    category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=True)
+    supplier_id = db.Column(db.Integer, db.ForeignKey('supplier.id'), nullable=True)
+    tags = db.Column(db.String(500))  # Comma-separated tags
+
+    # Status workflow
+    status = db.Column(db.String(20), default='draft')  # draft, pending, published
+
+    # Metadata
+    author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    view_count = db.Column(db.Integer, default=0)
+    attachments = db.Column(db.Text)  # JSON string for file paths
+
+    # Timestamps
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    author = db.relationship('User', backref='articles')
+    views = db.relationship('ArticleView', backref='article', lazy=True, cascade='all, delete-orphan')
+
+    __table_args__ = (
+        db.Index('idx_article_status', 'status'),
+        db.Index('idx_article_category', 'category_id'),
+        db.Index('idx_article_author', 'author_id'),
+    )
+
+    def to_dict(self, include_body=True):
+        data = {
+            'id': self.id,
+            'title': self.title,
+            'category_id': self.category_id,
+            'category_name': self.category.name if self.category else None,
+            'supplier_id': self.supplier_id,
+            'supplier_name': self.supplier.name if self.supplier else None,
+            'tags': self.tags,
+            'status': self.status,
+            'author_id': self.author_id,
+            'author_name': self.author.full_name if self.author else None,
+            'view_count': self.view_count,
+            'attachments': self.attachments,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
+        if include_body:
+            data['body'] = self.body
+
+        return data
+
+class ArticleView(db.Model):
+    """Track article views for analytics"""
+    __tablename__ = 'article_view'
+
+    id = db.Column(db.Integer, primary_key=True)
+    article_id = db.Column(db.Integer, db.ForeignKey('article.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    viewed_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    # Relationships
+    user = db.relationship('User', backref='article_views')
+
+    __table_args__ = (
+        db.Index('idx_article_view_article', 'article_id'),
+        db.Index('idx_article_view_user', 'user_id'),
+    )
