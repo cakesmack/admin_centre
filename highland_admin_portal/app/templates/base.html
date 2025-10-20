@@ -26,7 +26,6 @@
           Hygiene & Catering
         </a>
         <li class="nav-item dropdown" style="display: block">
-          <text>Welcome</text>
           <a
             class="nav-link dropdown-toggle"
             href="#"
@@ -130,7 +129,10 @@
             </a>
           </div>
           <div class="nav-item">
-            <a class="nav-link" href="{{ url_for('forms.invoice_correction') }}">
+            <a
+              class="nav-link"
+              href="{{ url_for('forms.invoice_correction') }}"
+            >
               <i class="bi bi-receipt-cutoff"></i>
               Invoiced Goods
             </a>
@@ -147,32 +149,47 @@
         <div class="nav-section">
           <div class="nav-section-title">Knowledge Base</div>
           <div class="nav-item">
-            <a class="nav-link" href="{{ url_for('kb_articles.kb_dashboard') }}">
+            <a
+              class="nav-link"
+              href="{{ url_for('kb_articles.kb_dashboard') }}"
+            >
               <i class="bi bi-house-door"></i>
               KB Home
             </a>
           </div>
           <div class="nav-item">
-            <a class="nav-link" href="{{ url_for('kb_articles.list_articles') }}">
+            <a
+              class="nav-link"
+              href="{{ url_for('kb_articles.list_articles') }}"
+            >
               <i class="bi bi-journal-text"></i>
               Articles
             </a>
           </div>
           <div class="nav-item">
-            <a class="nav-link" href="{{ url_for('kb_categories.list_categories') }}">
+            <a
+              class="nav-link"
+              href="{{ url_for('kb_categories.list_categories') }}"
+            >
               <i class="bi bi-tags"></i>
               Categories
             </a>
           </div>
           <div class="nav-item">
-            <a class="nav-link" href="{{ url_for('kb_suppliers.list_suppliers') }}">
+            <a
+              class="nav-link"
+              href="{{ url_for('kb_suppliers.list_suppliers') }}"
+            >
               <i class="bi bi-truck"></i>
               Suppliers
             </a>
           </div>
           {% if current_user.role == 'admin' %}
           <div class="nav-item">
-            <a class="nav-link" href="{{ url_for('kb_articles.admin_approvals') }}">
+            <a
+              class="nav-link"
+              href="{{ url_for('kb_articles.admin_approvals') }}"
+            >
               <i class="bi bi-check-circle"></i>
               Approvals
             </a>
@@ -214,28 +231,40 @@
             </a>
           </div>
         </div>
-        {% if current_user.role == 'admin' %}
-        <!-- Admin Section -->
+        <!-- Admin Section - Different access levels -->
+        {% if current_user.can_access_admin_dashboard() or current_user.can_access_reports() %}
         <div class="nav-section">
           <div class="nav-section-title">Admin</div>
+
+          <!-- Admin Dashboard - Admin only -->
+          {% if current_user.can_access_admin_dashboard() %}
           <div class="nav-item">
             <a class="nav-link" href="{{ url_for('admin.dashboard') }}">
               <i class="bi bi-shield-lock-fill"></i>
               Admin Dashboard
             </a>
           </div>
+          {% endif %}
+
+          <!-- User Management - Admin only -->
+          {% if current_user.can_manage_users() %}
           <div class="nav-item">
             <a class="nav-link" href="{{ url_for('main.users') }}">
               <i class="bi bi-people-fill"></i>
               User Management
             </a>
           </div>
+          {% endif %}
+
+          <!-- Reports & Analytics - Admin and Manager -->
+          {% if current_user.can_access_reports() %}
           <div class="nav-item">
             <a class="nav-link" href="{{ url_for('admin.reports') }}">
               <i class="bi bi-graph-up-arrow"></i>
               Reports & Analytics
             </a>
           </div>
+          {% endif %}
         </div>
         {% endif %}
       </div>
@@ -1236,7 +1265,7 @@
       let customerListPage = 1;
       let customerListLoading = false;
       let customerListHasMore = true;
-      let customerSearchTerm = '';
+      let customerSearchTerm = "";
 
       async function loadCustomerList(reset = false) {
         if (customerListLoading) return;
@@ -1250,8 +1279,12 @@
         }
 
         try {
-          const searchParam = customerSearchTerm ? `&search=${encodeURIComponent(customerSearchTerm)}` : '';
-          const response = await fetch(`/customers/api/directory?page=${customerListPage}&per_page=50${searchParam}`);
+          const searchParam = customerSearchTerm
+            ? `&search=${encodeURIComponent(customerSearchTerm)}`
+            : "";
+          const response = await fetch(
+            `/customers/api/directory?page=${customerListPage}&per_page=50${searchParam}`
+          );
           const data = await response.json();
 
           const customerList = document.getElementById("customerList");
@@ -1278,7 +1311,9 @@
             <p class="mb-1 text-muted">${
               customer.contact_name || "No contact name"
             }</p>
-            <small class="text-muted">${customer.phone || "No phone number"}</small>
+            <small class="text-muted">${
+              customer.phone || "No phone number"
+            }</small>
           `;
               customerList.appendChild(listItem);
             });
@@ -1289,7 +1324,8 @@
             // Add "Load More" button if there are more pages
             if (customerListHasMore) {
               const loadMoreBtn = document.createElement("button");
-              loadMoreBtn.className = "btn btn-sm btn-outline-primary w-100 mt-2";
+              loadMoreBtn.className =
+                "btn btn-sm btn-outline-primary w-100 mt-2";
               loadMoreBtn.textContent = `Load More (${data.total} total customers)`;
               loadMoreBtn.onclick = () => {
                 loadMoreBtn.remove();
@@ -1298,7 +1334,8 @@
               customerList.appendChild(loadMoreBtn);
             }
           } else if (reset) {
-            customerList.innerHTML = '<div class="alert alert-info">No customers found</div>';
+            customerList.innerHTML =
+              '<div class="alert alert-info">No customers found</div>';
           }
         } catch (error) {
           console.error("Error loading customers:", error);
@@ -1885,7 +1922,9 @@
 
         // Set new timeout to avoid too many API calls while typing
         customerSearchTimeout = setTimeout(() => {
-          const searchTerm = document.getElementById("customerSearch").value.trim();
+          const searchTerm = document
+            .getElementById("customerSearch")
+            .value.trim();
           customerSearchTerm = searchTerm;
 
           // Reset and reload with search term

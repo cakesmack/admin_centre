@@ -82,7 +82,7 @@
         <div class="d-grid gap-2">
           {% if current_user.id == user.id %}
           <a
-            href="{{ url_for('main.change_password') }}"
+            href="{{ url_for('auth.change_password') }}"
             class="btn btn-outline-primary btn-sm"
           >
             <i class="fas fa-key"></i> Change Password

@@ -14,12 +14,23 @@ logger = logging.getLogger(__name__)
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
 def admin_required(f):
-    """Decorator to require admin access"""
+    """Decorator to require admin access (admin only)"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated or current_user.role != 'admin':
+        if not current_user.is_authenticated or not current_user.can_access_admin_dashboard():
             from flask import flash, redirect, url_for
             flash('Admin access required.', 'danger')
+            return redirect(url_for('main.dashboard'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def reports_access_required(f):
+    """Decorator to require reports access (admin or manager)"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or not current_user.can_access_reports():
+            from flask import flash, redirect, url_for
+            flash('You do not have permission to access reports.', 'danger')
             return redirect(url_for('main.dashboard'))
         return f(*args, **kwargs)
     return decorated_function
@@ -33,14 +44,14 @@ def dashboard():
 
 @admin_bp.route('/reports')
 @login_required
-@admin_required
+@reports_access_required
 def reports():
-    """Main reports page"""
+    """Main reports page (accessible by admin and manager)"""
     return render_template('admin/reports.html', title='Admin Reports')
 
 @admin_bp.route('/api/reports/summary')
 @login_required
-@admin_required
+@reports_access_required
 def get_report_summary():
     """Get overall summary statistics"""
     
@@ -133,7 +144,7 @@ def get_report_summary():
 
 @admin_bp.route('/api/reports/daily-activity')
 @login_required
-@admin_required
+@reports_access_required
 def get_daily_activity():
     """Get daily activity breakdown for charts"""
     
@@ -202,7 +213,7 @@ def get_daily_activity():
 
 @admin_bp.route('/api/reports/user-activity')
 @login_required
-@admin_required
+@reports_access_required
 def get_user_activity():
     """Get activity breakdown by user"""
     
@@ -266,7 +277,7 @@ def get_user_activity():
 
 @admin_bp.route('/api/reports/inactive-customers')
 @login_required
-@admin_required
+@reports_access_required
 def get_inactive_customers():
     """Get customers who haven't been contacted recently"""
     
@@ -304,7 +315,7 @@ def get_inactive_customers():
 
 @admin_bp.route('/api/reports/callsheet-analytics')
 @login_required
-@admin_required
+@reports_access_required
 def get_callsheet_analytics():
     """Get detailed callsheet analytics - USES CALLSHEET MONTH/YEAR"""
     
@@ -568,7 +579,7 @@ def get_callsheet_analytics():
 
 @admin_bp.route('/api/reports/additional-analytics')
 @login_required
-@admin_required
+@reports_access_required
 def get_additional_analytics():
     """Get additional analytics data"""
     
@@ -642,7 +653,7 @@ def get_additional_analytics():
 
 @admin_bp.route('/api/reports/call-history-analytics')
 @login_required
-@admin_required
+@reports_access_required
 def get_call_history_analytics():
     """Get comprehensive call history analytics using CallHistory model"""
 
@@ -794,7 +805,7 @@ def get_call_history_analytics():
 
 @admin_bp.route('/api/reports/problem-customers')
 @login_required
-@admin_required
+@reports_access_required
 def get_problem_customers():
     """Identify customers with high decline/no-answer rates that need attention"""
 
@@ -888,7 +899,7 @@ def get_problem_customers():
 
 @admin_bp.route('/api/reports/sales-rep-needed')
 @login_required
-@admin_required
+@reports_access_required
 def get_sales_rep_needed():
     """Get list of customers who need a sales rep visit with detailed reasoning"""
 
@@ -994,7 +1005,7 @@ def get_sales_rep_needed():
 
 @admin_bp.route('/api/reports/returns-analytics')
 @login_required
-@admin_required
+@reports_access_required
 def get_returns_analytics():
     """Get returns form analytics - most used reasons and credit/uplift breakdown"""
 

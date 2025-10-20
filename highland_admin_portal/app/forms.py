@@ -6,15 +6,23 @@ from wtforms.widgets import TextArea
 class CreateUserForm(FlaskForm):
     full_name = StringField('Full Name', validators=[DataRequired(), Length(min=2, max=100)])
     email = StringField('Email Address', validators=[DataRequired(), Email()])
-    role = SelectField('Role', choices=[('staff', 'Staff'), ('admin', 'Admin')], validators=[DataRequired()])
+    role = SelectField('Role', choices=[
+        ('admin', 'Admin - Full Access'),
+        ('manager', 'Manager - Reports & Approvals'),
+        ('staff', 'Staff - Standard Access')
+    ], validators=[DataRequired()])
     job_title = StringField('Job Title', validators=[Optional(), Length(max=100)])
     direct_phone = TelField('Direct Phone', validators=[Optional()])
     mobile_phone = TelField('Mobile Phone', validators=[Optional()])
-    
+
 class EditUserForm(FlaskForm):
     full_name = StringField('Full Name', validators=[DataRequired(), Length(min=2, max=100)])
     email = StringField('Email Address', validators=[DataRequired(), Email()])
-    role = SelectField('Role', choices=[('staff', 'Staff'), ('admin', 'Admin')], validators=[DataRequired()])
+    role = SelectField('Role', choices=[
+        ('admin', 'Admin - Full Access'),
+        ('manager', 'Manager - Reports & Approvals'),
+        ('staff', 'Staff - Standard Access')
+    ], validators=[DataRequired()])
     job_title = StringField('Job Title', validators=[Optional(), Length(max=100)])
     direct_phone = TelField('Direct Phone', validators=[Optional()])
     mobile_phone = TelField('Mobile Phone', validators=[Optional()])

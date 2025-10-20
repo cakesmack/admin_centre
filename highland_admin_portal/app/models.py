@@ -58,6 +58,35 @@ class User(db.Model, UserMixin):
         chars = string.ascii_letters + string.digits + "!@#$%^&*"
         temp_password = ''.join(secrets.choice(chars) for _ in range(12))
         return temp_password
+
+    # Role checking helper methods
+    def is_admin(self):
+        """Check if user is an admin"""
+        return self.role == 'admin'
+
+    def is_manager(self):
+        """Check if user is a manager"""
+        return self.role == 'manager'
+
+    def is_staff(self):
+        """Check if user is staff (sales staff)"""
+        return self.role == 'staff'
+
+    def can_access_admin_dashboard(self):
+        """Only admins can access the admin dashboard"""
+        return self.role == 'admin'
+
+    def can_access_reports(self):
+        """Admins and managers can access reports"""
+        return self.role in ['admin', 'manager']
+
+    def can_approve_kb_articles(self):
+        """Only admins and managers can approve KB articles"""
+        return self.role in ['admin', 'manager']
+
+    def can_manage_users(self):
+        """Only admins can manage users"""
+        return self.role == 'admin'
     
     # Replace the get_recent_activity method in your User model (app/models.py)
 

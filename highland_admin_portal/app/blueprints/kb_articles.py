@@ -36,7 +36,7 @@ def kb_dashboard():
     total_articles = Article.query.filter_by(status='published').count()
     total_categories = Category.query.count()
     total_suppliers = Supplier.query.count()
-    pending_articles = Article.query.filter_by(status='pending').count() if current_user.role == 'admin' else 0
+    pending_articles = Article.query.filter_by(status='pending').count() if current_user.can_approve_kb_articles() else 0
 
     # Get recent articles
     recent_articles = Article.query.filter_by(status='published')\
@@ -70,9 +70,9 @@ def kb_dashboard():
 
 @bp.route('/admin/approvals')
 @login_required
-@role_required(['admin'])
+@role_required(['admin', 'manager'])
 def admin_approvals():
-    """Admin dashboard for article approvals"""
+    """Admin dashboard for article approvals (admin and manager only)"""
     pending_articles = Article.query.filter_by(status='pending')\
         .order_by(Article.updated_at.desc()).all()
 
@@ -293,17 +293,23 @@ def api_update_article(article_id):
     flash('Article updated successfully!', 'success')
     return jsonify(article.to_dict())
 
-@bp.route('/api/<int:article_id>', methods=['DELETE'])
+@bp.route('/api/<int:article_id>', methods=['DELETE', 'POST'])
 @login_required
 @role_required(['admin'])
 def api_delete_article(article_id):
     """API: Delete article (admin only)"""
     article = Article.query.get_or_404(article_id)
 
+    article_title = article.title
     db.session.delete(article)
     db.session.commit()
 
-    flash('Article deleted successfully!', 'success')
+    flash(f'Article "{article_title}" has been deleted successfully!', 'success')
+
+    # Return redirect for POST (form submission), or 204 for DELETE (API)
+    if request.method == 'POST':
+        # Always redirect to articles list after deletion to avoid 404
+        return redirect(url_for('kb_articles.list_articles'))
     return '', 204
 
 @bp.route('/api/<int:article_id>/submit', methods=['POST'])

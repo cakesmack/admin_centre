@@ -58,17 +58,31 @@ def index():
 @login_required
 def dashboard():
     """Main dashboard"""
+    from app.models import Article
+
     # Get customer count
     customer_count = Customer.query.count()
 
     # Get current date formatted
     current_date = datetime.now().strftime('%A, %B %d, %Y')
 
+    # Get recent KB articles
+    recent_articles = Article.query.filter_by(status='published')\
+        .order_by(Article.created_at.desc())\
+        .limit(6).all()
+
+    # Get popular articles
+    popular_articles = Article.query.filter_by(status='published')\
+        .order_by(Article.view_count.desc())\
+        .limit(5).all()
+
     return render_template(
         'dashboard.html',
         title='Hygiene & Catering Admin Portal',
         customer_count=customer_count,
-        current_date=current_date
+        current_date=current_date,
+        recent_articles=recent_articles,
+        popular_articles=popular_articles
     )
 
 
