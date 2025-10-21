@@ -129,9 +129,21 @@
   </div>
   {% endif %}
 
-  <!-- Sidebar with Tips -->
+  <!-- Sidebar with Preview and Tips -->
   <div class="col-lg-3">
     <div class="card">
+      <div class="card-header">
+        <h6 class="mb-0"><i class="bi bi-eye"></i> Preview</h6>
+      </div>
+      <div class="card-body">
+        <button type="button" class="btn btn-outline-primary w-100 mb-2" data-bs-toggle="modal" data-bs-target="#previewModal">
+          <i class="bi bi-eye"></i> Preview Article
+        </button>
+        <small class="text-muted">See how your article will look when published</small>
+      </div>
+    </div>
+
+    <div class="card mt-3">
       <div class="card-header">
         <h6 class="mb-0"><i class="bi bi-lightbulb"></i> Writing Tips</h6>
       </div>
@@ -148,17 +160,57 @@
 
     <div class="card mt-3">
       <div class="card-header">
-        <h6 class="mb-0"><i class="bi bi-text-paragraph"></i> Formatting Tools</h6>
+        <h6 class="mb-0"><i class="bi bi-text-paragraph"></i> Formatting Guide</h6>
       </div>
       <div class="card-body">
-        <p class="small mb-2">Available in the editor:</p>
+        <p class="small mb-2"><strong>Headings:</strong></p>
+        <ul class="small mb-2">
+          <li>H1 - Main section (largest)</li>
+          <li>H2 - Sub-section</li>
+          <li>H3 - Topic</li>
+          <li>H4 - Sub-topic</li>
+          <li>H5/H6 - Details (smallest)</li>
+        </ul>
+        <p class="small mb-2"><strong>Available tools:</strong></p>
         <ul class="small mb-0">
-          <li>Headings (H1-H6)</li>
           <li>Bold & Italic</li>
           <li>Bullet & Numbered Lists</li>
-          <li>Links</li>
+          <li>Links & Blockquotes</li>
+          <li>Images (click to upload)</li>
           <li>Code Blocks</li>
         </ul>
+        <p class="small mt-2 text-muted">
+          <strong>Images:</strong> Click the image icon in the toolbar to upload. Max 5MB. Supported: PNG, JPG, GIF, WEBP.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="previewModalLabel">
+          <i class="bi bi-eye"></i> Article Preview
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="card">
+          <div class="card-header">
+            <h1 class="h3 mb-0" id="preview-title">Article Title</h1>
+          </div>
+          <div class="card-body">
+            <div class="article-content" id="preview-content">
+              <p class="text-muted">Start writing to see a preview...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
       </div>
     </div>
   </div>
@@ -166,26 +218,90 @@
 
 <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
 <script>
-// Initialize Quill editor
+// Initialize Quill editor with image upload
 var quill = new Quill('#editor', {
   theme: 'snow',
   modules: {
-    toolbar: [
-      [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      [{ 'color': [] }, { 'background': [] }],
-      ['link', 'blockquote', 'code-block'],
-      ['clean']
-    ]
+    toolbar: {
+      container: [
+        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        [{ 'color': [] }, { 'background': [] }],
+        ['link', 'image', 'blockquote', 'code-block'],
+        ['clean']
+      ],
+      handlers: {
+        image: imageHandler
+      }
+    }
   },
   placeholder: 'Start writing your article...'
 });
+
+// Custom image handler
+function imageHandler() {
+  const input = document.createElement('input');
+  input.setAttribute('type', 'file');
+  input.setAttribute('accept', 'image/*');
+  input.click();
+
+  input.onchange = async () => {
+    const file = input.files[0];
+    if (file) {
+      // Check file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File too large. Maximum size is 5MB.');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('image', file);
+
+      try {
+        // Show loading indicator
+        const range = quill.getSelection(true);
+        quill.insertText(range.index, 'Uploading image...');
+        quill.setSelection(range.index + 19);
+
+        const response = await fetch('{{ url_for("kb_articles.upload_image") }}', {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await response.json();
+
+        // Remove loading text
+        quill.deleteText(range.index, 19);
+
+        if (result.success) {
+          // Insert image into editor
+          quill.insertEmbed(range.index, 'image', result.image_url);
+          quill.setSelection(range.index + 1);
+        } else {
+          alert('Upload failed: ' + result.error);
+        }
+      } catch (error) {
+        console.error('Upload error:', error);
+        alert('Upload failed: ' + error.message);
+      }
+    }
+  };
+}
 
 // Load existing content if editing
 {% if article %}
 quill.root.innerHTML = {{ article.body|tojson|safe }};
 {% endif %}
+
+// Update preview when modal is opened
+document.getElementById('previewModal').addEventListener('show.bs.modal', function () {
+  const title = document.getElementById('title').value || 'Untitled Article';
+  const content = quill.root.innerHTML;
+
+  document.getElementById('preview-title').textContent = title;
+  document.getElementById('preview-content').innerHTML = content;
+});
 
 document.getElementById('articleForm').addEventListener('submit', async function(e) {
   e.preventDefault();

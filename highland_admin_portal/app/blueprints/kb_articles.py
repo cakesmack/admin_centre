@@ -2,15 +2,25 @@
 Knowledge Base Articles Blueprint
 Handles article management including CRUD operations and approval workflow
 """
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, send_from_directory
 from flask_login import login_required, current_user
 from functools import wraps
 from datetime import datetime
+from werkzeug.utils import secure_filename
+import os
+import uuid
 from app import db
 from app.models import Article, Category, ArticleView, User, Supplier
 from sqlalchemy import or_, func
 
 bp = Blueprint('kb_articles', __name__, url_prefix='/kb/articles')
+
+# Image upload configuration
+UPLOAD_FOLDER = 'app/static/uploads/kb_images'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def role_required(allowed_roles):
     """Decorator to check if user has required role"""
@@ -381,3 +391,51 @@ def reject_article(article_id):
 
     flash(f'Article "{article.title}" has been returned to draft.', 'info')
     return redirect(request.referrer or url_for('kb_articles.list_articles'))
+
+@bp.route('/api/upload-image', methods=['POST'])
+@login_required
+@role_required(['staff', 'admin'])
+def upload_image():
+    """Upload image for article"""
+    if 'image' not in request.files:
+        return jsonify({'success': False, 'error': 'No image provided'}), 400
+
+    file = request.files['image']
+
+    if file.filename == '':
+        return jsonify({'success': False, 'error': 'No image selected'}), 400
+
+    if not allowed_file(file.filename):
+        return jsonify({'success': False, 'error': 'Invalid file type. Allowed: PNG, JPG, JPEG, GIF, WEBP'}), 400
+
+    # Check file size (5MB limit)
+    file.seek(0, os.SEEK_END)
+    file_size = file.tell()
+    file.seek(0)
+
+    if file_size > 5 * 1024 * 1024:  # 5MB
+        return jsonify({'success': False, 'error': 'File too large. Maximum size is 5MB'}), 400
+
+    try:
+        # Create upload folder if it doesn't exist
+        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+        # Generate unique filename
+        ext = file.filename.rsplit('.', 1)[1].lower()
+        filename = f"{uuid.uuid4().hex}.{ext}"
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+
+        # Save file
+        file.save(filepath)
+
+        # Return URL for the uploaded image
+        image_url = url_for('static', filename=f'uploads/kb_images/{filename}')
+
+        return jsonify({
+            'success': True,
+            'image_url': image_url,
+            'filename': filename
+        }), 200
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500

@@ -199,51 +199,57 @@
 </div>
 {% endif %}
 
+
+<!-- Image Lightbox Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-content bg-transparent border-0">
+      <div class="modal-body p-0 position-relative">
+        <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close" style="z-index: 1050;"></button>
+        <img id="modalImage" src="" class="img-fluid w-100" alt="Full size image">
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Add click handlers to all images in article content for lightbox
+document.addEventListener('DOMContentLoaded', function() {
+  const articleImages = document.querySelectorAll('.article-content img');
+  const imageModal = new bootstrap.Modal(document.getElementById('imageModal'));
+  const modalImage = document.getElementById('modalImage');
+
+  articleImages.forEach(img => {
+    // Make images clickable
+    img.style.cursor = 'pointer';
+    img.classList.add('article-image-clickable');
+
+    img.addEventListener('click', function() {
+      modalImage.src = this.src;
+      modalImage.alt = this.alt || 'Article image';
+      imageModal.show();
+    });
+  });
+});
+</script>
+
 <style>
-.article-content {
-  font-size: 1.05rem;
-  line-height: 1.7;
+.article-image-clickable {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.article-content h1,
-.article-content h2,
-.article-content h3,
-.article-content h4,
-.article-content h5,
-.article-content h6 {
-  margin-top: 1.5rem;
-  margin-bottom: 1rem;
+.article-image-clickable:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
-.article-content p {
-  margin-bottom: 1rem;
+#imageModal .modal-content {
+  background: rgba(0, 0, 0, 0.9) !important;
 }
 
-.article-content ul,
-.article-content ol {
-  margin-bottom: 1rem;
-  padding-left: 2rem;
-}
-
-.article-content img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 8px;
-  margin: 1rem 0;
-}
-
-.article-content code {
-  background-color: rgba(0, 0, 0, 0.1);
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 0.9em;
-}
-
-.article-content pre {
-  background-color: rgba(0, 0, 0, 0.1);
-  padding: 1rem;
-  border-radius: 8px;
-  overflow-x: auto;
+#imageModal img {
+  max-height: 90vh;
+  object-fit: contain;
 }
 </style>
 
