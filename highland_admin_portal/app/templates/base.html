@@ -18,6 +18,11 @@
     />
   </head>
   <body>
+    <!-- Mobile Hamburger Button -->
+    <button class="mobile-menu-toggle" id="mobileMenuToggle" onclick="toggleSidebar()">
+      <i class="bi bi-list"></i>
+    </button>
+
     <!-- Navigation Sidebar -->
     <nav class="nav-sidebar" id="navSidebar">
       <div class="nav-sidebar-header">
@@ -1583,11 +1588,10 @@
 
           addresses.push({
             label: label,
+            phone: block.querySelector(".address-phone").value,
             street: block.querySelector(".address-street").value,
             city: block.querySelector(".address-city").value,
-            state: block.querySelector(".address-state").value,
             zip: block.querySelector(".address-zip").value,
-            country: block.querySelector(".address-country").value,
           });
         });
 
@@ -1607,7 +1611,7 @@
         };
 
         try {
-          const response = await fetch(`/api/customer/${customerId}`, {
+          const response = await fetch(`/customers/api/${customerId}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data),
@@ -1892,7 +1896,7 @@
         };
 
         try {
-          const response = await fetch(`/api/customer/${customerId}`, {
+          const response = await fetch(`/customers/api/${customerId}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data),

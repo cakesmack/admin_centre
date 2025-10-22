@@ -4,15 +4,15 @@
 
 <div class="container-fluid">
   <!-- Header -->
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 mb-md-4">
+    <div class="mb-2 mb-md-0">
       <h2 class="mb-1">Hygiene & Catering Admin Portal</h2>
       <h3>Welcome, {{ current_user.full_name or current_user.username }}</h3>
       <p class="text-muted mb-0">{{ current_date }}</p>
     </div>
     {% if current_user.role in ['staff', 'admin'] %}
     <a href="{{ url_for('kb_articles.new_article') }}" class="btn btn-primary">
-      <i class="bi bi-plus-circle"></i> New Article
+      <i class="bi bi-plus-circle"></i> <span class="d-none d-sm-inline">New Article</span>
     </a>
     {% endif %}
   </div>
@@ -40,7 +40,7 @@
             {% if recent_articles %}
             <div class="row">
               {% for article in recent_articles %}
-              <div class="col-md-6 col-lg-4 mb-4">
+              <div class="col-12 col-sm-6 col-lg-4 mb-4">
                 <a href="{{ url_for('kb_articles.view_article', article_id=article.id) }}" class="text-decoration-none">
                   <div class="card h-100 kb-article-card">
                     <div class="card-body">
@@ -113,7 +113,7 @@
     <!-- Secondary Row: Popular Articles & Company Updates -->
     <div class="row mb-4">
       <!-- Popular Articles -->
-      <div class="col-lg-4 mb-4">
+      <div class="col-12 col-lg-4 mb-4">
         <div class="card shadow-sm h-100">
           <div class="card-header bg-success text-white">
             <h6 class="mb-0">
@@ -159,7 +159,7 @@
       </div>
 
       <!-- Company Updates -->
-      <div class="col-lg-8 mb-4">
+      <div class="col-12 col-lg-8 mb-4">
         <div class="card shadow-sm">
           <div class="card-header bg-info text-white">
             <div class="d-flex justify-content-between align-items-center">
@@ -256,7 +256,7 @@
         </div>
 
         <div class="row">
-          <div class="col-md-6">
+          <div class="col-12 col-md-6">
             <div class="mb-3">
               <label class="form-label">Priority</label>
               <select class="form-select" id="updatePriority">
@@ -266,7 +266,7 @@
               </select>
             </div>
           </div>
-          <div class="col-md-6">
+          <div class="col-12 col-md-6">
             <div class="mb-3">
               <div class="form-check mt-4">
                 <input

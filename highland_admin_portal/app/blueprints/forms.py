@@ -404,7 +404,7 @@ def print_form(form_id):
             author=author,
             date_created=form.date_created,
             form_id=form_id,
-            company_name='Highland Industrial Supplies'
+            company_name='Highland Catering Supplies'
         )
     elif form.type == 'invoice_correction':
         return render_template(
@@ -415,7 +415,7 @@ def print_form(form_id):
             author=author,
             date_created=form.date_created,
             form_id=form_id,
-            company_name='Highland Industrial Supplies'
+            company_name='Highland Catering Supplies'
         )
     else:
         # Default to returns/credit uplift template
@@ -427,7 +427,7 @@ def print_form(form_id):
             author=author,
             date_created=form.date_created,
             form_id=form_id,
-            company_name='Highland Industrial Supplies'
+            company_name='Highland Catering Supplies'
         )
 
 

@@ -1,7 +1,7 @@
 {% extends "base.html" %} {% block content %}
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <div>
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-2 mb-md-4">
+  <div class="mb-2 mb-md-0">
     <h2>Customer Stock Management</h2>
     {% if low_stock_count > 0 %}
     <div class="alert alert-warning">
@@ -10,19 +10,19 @@
     </div>
     {% endif %}
   </div>
-  <div>
+  <div class="d-flex flex-column flex-md-row gap-2">
     <button class="btn btn-success" onclick="showAddStockModal()">
-      <i class="bi bi-plus-circle"></i> Add New Stock Item
+      <i class="bi bi-plus-circle"></i> <span class="d-none d-sm-inline">Add New Stock Item</span>
     </button>
     <button class="btn btn-primary" onclick="showQuickTransactionModal()">
-      <i class="bi bi-arrow-down-up"></i> Quick Transaction
+      <i class="bi bi-arrow-down-up"></i> <span class="d-none d-sm-inline">Quick Transaction</span>
     </button>
   </div>
 </div>
 
 <!-- Stock Overview Cards -->
 <div class="row mb-4">
-  <div class="col-md-3">
+  <div class="col-12 col-sm-6 col-md-3 mb-3 mb-md-0">
     <div class="card">
       <div class="card-body text-center">
         <h5 class="text-primary">{{ stock_items|length }}</h5>
@@ -30,7 +30,7 @@
       </div>
     </div>
   </div>
-  <div class="col-md-3">
+  <div class="col-12 col-sm-6 col-md-3 mb-3 mb-md-0">
     <div class="card">
       <div class="card-body text-center">
         <h5 class="text-warning">{{ low_stock_count }}</h5>
@@ -38,7 +38,7 @@
       </div>
     </div>
   </div>
-  <div class="col-md-3">
+  <div class="col-12 col-sm-6 col-md-3 mb-3 mb-md-0">
     <div class="card">
       <div class="card-body text-center">
         <h5 class="text-info">
@@ -48,7 +48,7 @@
       </div>
     </div>
   </div>
-  <div class="col-md-3">
+  <div class="col-12 col-sm-6 col-md-3 mb-3 mb-md-0">
     <div class="card">
       <div class="card-body text-center">
         <h5 class="text-success">
@@ -64,7 +64,7 @@
 <div class="card mb-4">
   <div class="card-body">
     <div class="row">
-      <div class="col-md-4">
+      <div class="col-12 col-md-4 mb-3 mb-md-0">
         <label class="form-label">Filter by Customer</label>
         <select
           class="form-select"
@@ -78,7 +78,7 @@
           {% endfor %}
         </select>
       </div>
-      <div class="col-md-4">
+      <div class="col-12 col-md-4 mb-3 mb-md-0">
         <label class="form-label">Search Product</label>
         <input
           type="text"
@@ -88,7 +88,7 @@
           onkeyup="filterStock()"
         />
       </div>
-      <div class="col-md-4">
+      <div class="col-12 col-md-4 mb-3 mb-md-0">
         <label class="form-label">Stock Status</label>
         <select
           class="form-select"
@@ -148,7 +148,7 @@
             </td>
             <td>{{ item.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
             <td>
-              <div class="btn-group btn-group-sm">
+              <div class="d-flex flex-column flex-md-row gap-1">
                 <button
                   class="btn btn-sm btn-success"
                   onclick="showStockInModal({{ item.id }}, '{{ item.customer.name }}', '{{ item.product_name }}')"
@@ -196,7 +196,7 @@
         <form id="addStockForm">
           <!-- Customer Search Section -->
           <div class="row">
-            <div class="col-md-6 mb-3">
+            <div class="col-12 col-md-6 mb-3">
               <label class="form-label">Customer Account Number *</label>
               <div class="search-container position-relative">
                 <input
@@ -208,7 +208,7 @@
                 />
               </div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-12 col-md-6 mb-3">
               <label class="form-label">Customer Name *</label>
               <div class="search-container position-relative">
                 <input
@@ -240,7 +240,7 @@
 
           <!-- Product Details -->
           <div class="row">
-            <div class="col-md-12 mb-3">
+            <div class="col-12 mb-3">
               <label class="form-label">Product Code</label>
               <input
                 type="text"
@@ -255,7 +255,7 @@
           </div>
 
           <div class="row">
-            <div class="col-md-8 mb-3">
+            <div class="col-12 col-md-8 mb-3">
               <label class="form-label">Product Name *</label>
               <input
                 type="text"
@@ -264,7 +264,7 @@
                 required
               />
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-12 col-md-4 mb-3">
               <label class="form-label">Reorder Level</label>
               <input
                 type="number"
@@ -277,7 +277,7 @@
           </div>
 
           <div class="row">
-            <div class="col-md-4 mb-3">
+            <div class="col-12 col-md-4 mb-3">
               <label class="form-label">Initial Stock</label>
               <input
                 type="number"
@@ -287,7 +287,7 @@
                 value="0"
               />
             </div>
-            <div class="col-md-8 mb-3">
+            <div class="col-12 col-md-8 mb-3">
               <label class="form-label">Invoice Number</label>
               <input
                 type="text"

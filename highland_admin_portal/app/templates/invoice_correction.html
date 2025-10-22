@@ -28,19 +28,19 @@
       </div>
 
       <div class="row mb-3">
-        <div class="col-md-4">
+        <div class="col-12 col-md-4 mb-3 mb-md-0">
           <div class="search-container position-relative">
             {{ form.customer_account.label(class="form-label") }}
             {{ form.customer_account(class="form-control", placeholder="Start typing account number...") }}
           </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-12 col-md-4 mb-3 mb-md-0">
           <div class="search-container position-relative">
             {{ form.customer_name.label(class="form-label") }}
             {{ form.customer_name(class="form-control", placeholder="Start typing customer name...") }}
           </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-12 col-md-4 mb-3 mb-md-0">
           {{ form.customer_address.label(class="form-label") }}
           {{ form.customer_address(class="form-control", placeholder="Customer address", readonly=true) }}
         </div>

@@ -3,10 +3,10 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <div class="container-fluid">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="bi bi-graph-up-arrow"></i> Admin Reports & Analytics</h2>
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 mb-md-4">
+    <h2 class="mb-2 mb-md-0"><i class="bi bi-graph-up-arrow"></i> Admin Reports & Analytics</h2>
     <button class="btn btn-primary" onclick="exportReport()">
-      <i class="bi bi-download"></i> Export Report
+      <i class="bi bi-download"></i> <span class="d-none d-sm-inline">Export Report</span>
     </button>
   </div>
 
@@ -14,7 +14,7 @@
   <div class="card mb-4">
     <div class="card-body">
       <div class="row align-items-end">
-        <div class="col-md-3">
+        <div class="col-12 col-md-6 col-lg-3 mb-3">
           <label class="form-label">Report Period</label>
           <select
             class="form-select"
@@ -30,17 +30,17 @@
             <option value="custom">Custom Range</option>
           </select>
         </div>
-        <div class="col-md-3">
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-3">
           <label class="form-label">Start Date</label>
           <input type="date" class="form-control" id="startDate" />
         </div>
-        <div class="col-md-3">
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-3">
           <label class="form-label">End Date</label>
           <input type="date" class="form-control" id="endDate" />
         </div>
-        <div class="col-md-3">
+        <div class="col-12 col-md-4 col-lg-3 mb-3">
           <button class="btn btn-success w-100" onclick="loadAllReports()">
-            <i class="bi bi-arrow-clockwise"></i> Generate Report
+            <i class="bi bi-arrow-clockwise"></i> <span class="d-none d-sm-inline">Generate Report</span>
           </button>
         </div>
       </div>
@@ -49,7 +49,7 @@
 
   <!-- Summary Statistics -->
   <div class="row mb-4">
-    <div class="col-md-3">
+    <div class="col-12 col-sm-6 col-md-3 mb-3 mb-md-0">
       <div class="card text-center">
         <div class="card-body">
           <h3 class="text-primary mb-0" id="totalFormsCount">-</h3>
@@ -62,7 +62,7 @@
         </div>
       </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-12 col-sm-6 col-md-3 mb-3 mb-md-0">
       <div class="card text-center">
         <div class="card-body">
           <h3 class="text-success mb-0" id="standingOrdersCount">-</h3>
@@ -73,7 +73,7 @@
         </div>
       </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-12 col-sm-6 col-md-3 mb-3 mb-md-0">
       <div class="card text-center">
         <div class="card-body">
           <h3 class="text-info mb-0" id="stockTransactionsCount">-</h3>
@@ -81,7 +81,7 @@
         </div>
       </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-12 col-sm-6 col-md-3 mb-3 mb-md-0">
       <div class="card text-center">
         <div class="card-body">
           <h3 class="text-warning mb-0" id="callsheetEntriesCount">-</h3>
@@ -93,7 +93,7 @@
 
   <!-- Charts -->
   <div class="row mb-4">
-    <div class="col-md-8">
+    <div class="col-12 col-lg-8 mb-3 mb-lg-0">
       <div class="card">
         <div class="card-header">
           <h5 class="mb-0">
@@ -105,7 +105,7 @@
         </div>
       </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-12 col-lg-4">
       <div class="card">
         <div class="card-header">
           <h5 class="mb-0">
@@ -128,7 +128,7 @@
     </div>
     <div class="card-body">
       <div class="row">
-        <div class="col-md-6">
+        <div class="col-12 col-md-6 mb-3 mb-md-0">
           <div class="card">
             <div class="card-header">
               <h6 class="mb-0">Call Status Breakdown (Current Period)</h6>
@@ -138,7 +138,7 @@
             </div>
           </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-12 col-md-6">
           <div class="card">
             <div class="card-header bg-success text-white">
               <h6 class="mb-0 text-white">
@@ -195,7 +195,7 @@
     </div>
     <div class="card-body">
       <div class="row mb-4">
-        <div class="col-md-3">
+        <div class="col-12 col-sm-6 col-md-3 mb-3 mb-md-0">
           <div class="card text-center bg-light">
             <div class="card-body">
               <h3 class="text-primary mb-0" id="totalCallsHistory">-</h3>
@@ -203,7 +203,7 @@
             </div>
           </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-12 col-sm-6 col-md-3 mb-3 mb-md-0">
           <div class="card text-center bg-light">
             <div class="card-body">
               <h3 class="text-success mb-0" id="historySuccessRate">-</h3>
@@ -211,7 +211,7 @@
             </div>
           </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-12 col-sm-6 col-md-3 mb-3 mb-md-0">
           <div class="card text-center bg-light">
             <div class="card-body">
               <h3 class="text-danger mb-0" id="historyDeclineRate">-</h3>
@@ -219,7 +219,7 @@
             </div>
           </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-12 col-sm-6 col-md-3 mb-3 mb-md-0">
           <div class="card text-center bg-light">
             <div class="card-body">
               <h3 class="text-warning mb-0" id="historyNoAnswerRate">-</h3>
@@ -230,7 +230,7 @@
       </div>
 
       <div class="row">
-        <div class="col-md-6">
+        <div class="col-12 col-md-6 mb-3 mb-md-0">
           <div class="card">
             <div class="card-header">
               <h6 class="mb-0">Weekly Call Trends</h6>
@@ -240,7 +240,7 @@
             </div>
           </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-12 col-md-6">
           <div class="card">
             <div class="card-header">
               <h6 class="mb-0">Daily Success Trend (Last 14 Days)</h6>
@@ -275,7 +275,7 @@
       </div>
 
       <div class="row">
-        <div class="col-md-6">
+        <div class="col-12 col-md-6 mb-3 mb-md-0">
           <div class="card">
             <div class="card-header">
               <h6 class="mb-0">Most Common Return Reasons</h6>
@@ -285,7 +285,7 @@
             </div>
           </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-12 col-md-6">
           <div class="card">
             <div class="card-header">
               <h6 class="mb-0">Top Customers with Returns</h6>

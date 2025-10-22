@@ -26,8 +26,6 @@ wheels/
 # Flask
 instance/
 .webassets-cache
-
-# Database
 *.db
 *.sqlite
 *.sqlite3
@@ -35,7 +33,7 @@ instance/
 # Environment variables
 .env
 .env.local
-.flaskenv
+.env.*.local
 
 # IDE
 .vscode/
@@ -43,28 +41,51 @@ instance/
 *.swp
 *.swo
 *~
-
-# OS
 .DS_Store
-Thumbs.db
 
 # Logs
 logs/
 *.log
 
+# Uploads
+uploads/
+static/uploads/
+
+# Database
+*.db-journal
+admin_portal.db
+admin_portal_dev.db
+admin_portal_test.db
+
 # Testing
 .pytest_cache/
 .coverage
 htmlcov/
+.tox/
 
-# Claude Code settings (keep local settings private)
-.claude/settings.local.json
+# Documentation builds
+docs/_build/
 
 # Temporary files
 *.tmp
 *.bak
+*.cache
+*nul
 
-# Don't ignore these important files
+# OS files
+Thumbs.db
+.DS_Store
+
+# Backup files
+*~
+*.swp
+*.swo
+
+# Claude Code settings (keep local settings private)
+.claude/settings.local.json
+
+# Keep these important files
 !.gitignore
 !requirements.txt
 !README.md
+!.env.example

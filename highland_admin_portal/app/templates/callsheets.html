@@ -200,14 +200,14 @@ table.table tbody tr.callsheet-row:hover td {
 
 <div class="container-fluid">
     <!-- Header - REMOVED MONTH NAVIGATION -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="mb-0">Call Sheets</h2>
-        <div>
-            <button class="btn btn-info me-2" onclick="viewHistory()">
-                <i class="bi bi-clock-history"></i> View History
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 mb-md-4">
+        <h2 class="mb-2 mb-md-0">Call Sheets</h2>
+        <div class="d-flex flex-column flex-md-row gap-2">
+            <button class="btn btn-info" onclick="viewHistory()">
+                <i class="bi bi-clock-history"></i> <span class="d-none d-sm-inline">View History</span>
             </button>
             <button class="btn btn-success" onclick="showAddCallsheetModal()">
-                <i class="bi bi-plus-circle"></i> Add Callsheet
+                <i class="bi bi-plus-circle"></i> <span class="d-none d-sm-inline">Add Callsheet</span>
             </button>
         </div>
     </div>
@@ -264,16 +264,16 @@ table.table tbody tr.callsheet-row:hover td {
                      id="callsheet-{{ callsheet.id }}">
                     
                     <div class="card">
-                        <div class="card-header callsheet-header d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">{{ callsheet.name }} - {{ day }}</h5>
-                            <div>
-                                <button class="btn btn-sm btn-primary me-2" 
+                        <div class="card-header callsheet-header d-flex flex-wrap justify-content-between align-items-center">
+                            <h5 class="mb-2 mb-md-0">{{ callsheet.name }} - {{ day }}</h5>
+                            <div class="d-flex flex-column flex-md-row gap-2">
+                                <button class="btn btn-sm btn-primary"
                                         onclick="completeCallsheet({{ callsheet.id }}, '{{ callsheet.name }}')">
-                                    <i class="bi bi-check-circle"></i> Complete
+                                    <i class="bi bi-check-circle"></i> <span class="d-none d-sm-inline">Complete</span>
                                 </button>
-                                <button class="btn btn-sm btn-success" 
+                                <button class="btn btn-sm btn-success"
                                         onclick="showAddCustomerModal({{ callsheet.id }})">
-                                    <i class="bi bi-person-plus"></i> Add Customer
+                                    <i class="bi bi-person-plus"></i> <span class="d-none d-sm-inline">Add Customer</span>
                                 </button>
                             </div>
                         </div>

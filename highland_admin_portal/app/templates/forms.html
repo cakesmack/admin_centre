@@ -1,19 +1,21 @@
 {% extends "base.html" %} 
 {% block content %}
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h2>Forms Management</h2>
-  <div>
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-2 mb-md-4">
+  <h2 class="mb-2 mb-md-0">Forms Management</h2>
+  <div class="d-flex flex-column flex-md-row gap-2">
     <button class="btn btn-info" onclick="toggleArchived()">
-      <i class="bi bi-archive"></i> 
-      {% if current_filters.show_archived %}
-        Hide Archived
-      {% else %}
-        Show Archived
-      {% endif %}
+      <i class="bi bi-archive"></i>
+      <span class="d-none d-sm-inline">
+        {% if current_filters.show_archived %}
+          Hide Archived
+        {% else %}
+          Show Archived
+        {% endif %}
+      </span>
     </button>
     <button class="btn btn-secondary" onclick="resetFilters()">
-      <i class="bi bi-arrow-clockwise"></i> Reset Filters
+      <i class="bi bi-arrow-clockwise"></i> <span class="d-none d-sm-inline">Reset Filters</span>
     </button>
   </div>
 </div>
@@ -27,7 +29,7 @@
     <form method="GET" action="{{ url_for('forms.list_forms') }}" id="filterForm">
       <input type="hidden" name="show_archived" value="{{ current_filters.show_archived|lower }}">
       <div class="row">
-        <div class="col-md-3 mb-3">
+        <div class="col-12 col-md-6 col-lg-3 mb-3">
           <label class="form-label">Form Type</label>
           <select class="form-select" name="type" onchange="this.form.submit()">
             <option value="">All Types</option>
@@ -38,20 +40,20 @@
             {% endfor %}
           </select>
         </div>
-        
-        <div class="col-md-2 mb-3">
+
+        <div class="col-12 col-sm-6 col-md-4 col-lg-2 mb-3">
           <label class="form-label">Date From</label>
-          <input type="date" class="form-control" name="date_from" 
+          <input type="date" class="form-control" name="date_from"
                  value="{{ current_filters.date_from }}" onchange="this.form.submit()">
         </div>
-        
-        <div class="col-md-2 mb-3">
+
+        <div class="col-12 col-sm-6 col-md-4 col-lg-2 mb-3">
           <label class="form-label">Date To</label>
-          <input type="date" class="form-control" name="date_to" 
+          <input type="date" class="form-control" name="date_to"
                  value="{{ current_filters.date_to }}" onchange="this.form.submit()">
         </div>
-        
-        <div class="col-md-2 mb-3">
+
+        <div class="col-12 col-md-4 col-lg-2 mb-3">
           <label class="form-label">Submitted By</label>
           <select class="form-select" name="submitted_by" onchange="this.form.submit()">
             <option value="">All Users</option>
@@ -62,11 +64,11 @@
             {% endfor %}
           </select>
         </div>
-        
-        <div class="col-md-3 mb-3">
+
+        <div class="col-12 col-md-6 col-lg-3 mb-3">
           <label class="form-label">Customer Search</label>
           <div class="input-group">
-            <input type="text" class="form-control" name="customer" 
+            <input type="text" class="form-control" name="customer"
                    placeholder="Account or Name" value="{{ current_filters.customer }}">
             <button class="btn btn-primary" type="submit">
               <i class="bi bi-search"></i>
@@ -144,27 +146,27 @@
               {% endif %}
             </td>
             <td>
-              <div class="btn-group btn-group-sm" role="group">
-                <a href="{{ url_for('forms.view_form', form_id=form.id) }}" 
-                   class="btn btn-info" title="View">
+              <div class="d-flex flex-column flex-md-row gap-1">
+                <a href="{{ url_for('forms.view_form', form_id=form.id) }}"
+                   class="btn btn-sm btn-info" title="View">
                   <i class="bi bi-eye"></i>
                 </a>
-                <a href="{{ url_for('forms.print_form', form_id=form.id) }}" 
-                   class="btn btn-primary" target="_blank" title="Print">
+                <a href="{{ url_for('forms.print_form', form_id=form.id) }}"
+                   class="btn btn-sm btn-primary" target="_blank" title="Print">
                   <i class="bi bi-printer"></i>
                 </a>
-                
+
                 {% if not form.is_archived %}
                   {% if not form.is_completed %}
-                    <button class="btn btn-success" onclick="completeForm({{ form.id }})" title="Mark Complete">
+                    <button class="btn btn-sm btn-success" onclick="completeForm({{ form.id }})" title="Mark Complete">
                       <i class="bi bi-check-circle"></i>
                     </button>
                   {% endif %}
-                  <button class="btn btn-warning" onclick="archiveForm({{ form.id }})" title="Archive">
+                  <button class="btn btn-sm btn-warning" onclick="archiveForm({{ form.id }})" title="Archive">
                     <i class="bi bi-archive"></i>
                   </button>
                 {% else %}
-                  <button class="btn btn-secondary" onclick="unarchiveForm({{ form.id }})" title="Restore">
+                  <button class="btn btn-sm btn-secondary" onclick="unarchiveForm({{ form.id }})" title="Restore">
                     <i class="bi bi-arrow-counterclockwise"></i>
                   </button>
                 {% endif %}
@@ -196,7 +198,7 @@
 
 <!-- Statistics Cards -->
 <div class="row mt-4">
-  <div class="col-md-3">
+  <div class="col-12 col-sm-6 col-md-3 mb-3 mb-md-0">
     <div class="card text-center">
       <div class="card-body">
         <h4 class="text-primary">{{ forms|length }}</h4>
@@ -204,7 +206,7 @@
       </div>
     </div>
   </div>
-  <div class="col-md-3">
+  <div class="col-12 col-sm-6 col-md-3 mb-3 mb-md-0">
     <div class="card text-center">
       <div class="card-body">
         <h4 class="text-warning">{{ forms|selectattr('is_completed', 'equalto', False)|selectattr('is_archived', 'equalto', False)|list|length }}</h4>
@@ -212,7 +214,7 @@
       </div>
     </div>
   </div>
-  <div class="col-md-3">
+  <div class="col-12 col-sm-6 col-md-3 mb-3 mb-md-0">
     <div class="card text-center">
       <div class="card-body">
         <h4 class="text-success">{{ forms|selectattr('is_completed', 'equalto', True)|list|length }}</h4>
@@ -220,7 +222,7 @@
       </div>
     </div>
   </div>
-  <div class="col-md-3">
+  <div class="col-12 col-sm-6 col-md-3 mb-3 mb-md-0">
     <div class="card text-center">
       <div class="card-body">
         <h4 class="text-secondary">{{ forms|selectattr('is_archived', 'equalto', True)|list|length }}</h4>

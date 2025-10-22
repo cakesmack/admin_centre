@@ -24,21 +24,21 @@
       </div>
 
       <div class="row mb-3">
-        <div class="col-md-4">
+        <div class="col-12 col-md-4 mb-3 mb-md-0">
           <div class="search-container position-relative">
             {{ form.customer_account.label(class="form-label") }} {{
             form.customer_account(class="form-control", placeholder="Start
             typing account number...") }}
           </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-12 col-md-4 mb-3 mb-md-0">
           <div class="search-container position-relative">
             {{ form.customer_name.label(class="form-label") }} {{
             form.customer_name(class="form-control", placeholder="Start typing
             customer name...") }}
           </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-12 col-md-4 mb-3 mb-md-0">
           {{ form.customer_address.label(class="form-label") }} {{
           form.customer_address(class="form-control", placeholder="Customer
           address", readonly=true) }}
@@ -60,19 +60,19 @@
 
       <!-- Main Product -->
       <div class="row mb-3 product-row" id="main-product">
-        <div class="col-md-4">
+        <div class="col-12 col-md-4 mb-3 mb-md-0">
           <div class="search-container position-relative">
             {{ form.product_code.label(class="form-label") }} {{
             form.product_code(class="form-control product-code",
             placeholder="Start typing product code...") }}
           </div>
         </div>
-        <div class="col-md-5">
+        <div class="col-12 col-md-5 mb-3 mb-md-0">
           {{ form.product_name.label(class="form-label") }} {{
           form.product_name(class="form-control product-name",
           placeholder="Product description") }}
         </div>
-        <div class="col-md-3">
+        <div class="col-12 col-md-3 mb-3 mb-md-0">
           {{ form.quantity.label(class="form-label") }} {{
           form.quantity(class="form-control", type="number", min="1",
           placeholder="Quantity") }}
@@ -102,11 +102,11 @@
       </div>
 
       <div class="row mb-3">
-        <div class="col-md-6">
+        <div class="col-12 col-md-6 mb-3 mb-md-0">
           {{ form.reason.label(class="form-label") }} {{
           form.reason(class="form-select") }}
         </div>
-        <div class="col-md-6">
+        <div class="col-12 col-md-6 mb-3 mb-md-0">
           {{ form.notes.label(class="form-label") }} {{
           form.notes(class="form-control", rows="3", placeholder="Any additional
           notes...") }}

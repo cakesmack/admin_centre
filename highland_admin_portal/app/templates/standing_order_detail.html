@@ -1,20 +1,20 @@
 {% extends "base.html" %} {% block content %}
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h2>Standing Order Details</h2>
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-2 mb-md-4">
+  <h2 class="mb-2 mb-md-0">Standing Order Details</h2>
   <div>
     <a
       href="{{ url_for('standing_orders.standing_orders') }}"
       class="btn btn-secondary"
     >
-      <i class="bi bi-arrow-left"></i> Back to List
+      <i class="bi bi-arrow-left"></i> <span class="d-none d-sm-inline">Back to List</span>
     </a>
   </div>
 </div>
 
 <!-- Customer Information Card -->
 <div class="row mb-4">
-  <div class="col-md-6">
+  <div class="col-12 col-md-6 mb-3 mb-md-0">
     <div class="card">
       <div class="card-header bg-primary text-white">
         <h5 class="mb-0"><i class="bi bi-person"></i> Customer Information</h5>
@@ -33,7 +33,7 @@
     </div>
   </div>
 
-  <div class="col-md-6">
+  <div class="col-12 col-md-6 mb-3 mb-md-0">
     <div class="card">
       <div class="card-header bg-info text-white">
         <h5 class="mb-0"><i class="bi bi-calendar"></i> Order Information</h5>

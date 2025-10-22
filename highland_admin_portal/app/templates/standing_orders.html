@@ -1,16 +1,16 @@
 {% extends "base.html" %} {% block content %}
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h2>Standing Orders Management</h2>
-  <div>
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-2 mb-md-4">
+  <h2 class="mb-2 mb-md-0">Standing Orders Management</h2>
+  <div class="d-flex flex-column flex-md-row gap-2">
     <a href="{{ url_for('standing_orders.schedule_view') }}" class="btn btn-info">
-      <i class="bi bi-calendar-week"></i> Schedule View
+      <i class="bi bi-calendar-week"></i> <span class="d-none d-sm-inline">Schedule View</span>
     </a>
     <a href="{{ url_for('standing_orders.new_standing_order') }}" class="btn btn-success">
-      <i class="bi bi-plus-circle"></i> New Standing Order
+      <i class="bi bi-plus-circle"></i> <span class="d-none d-sm-inline">New Standing Order</span>
     </a>
     <button class="btn btn-primary" onclick="generateSchedules()">
-      <i class="bi bi-arrow-clockwise"></i> Generate Schedules
+      <i class="bi bi-arrow-clockwise"></i> <span class="d-none d-sm-inline">Generate Schedules</span>
     </button>
   </div>
 </div>
@@ -18,7 +18,7 @@
 
 <!-- Statistics Cards -->
 <div class="row mb-4">
-  <div class="col-md-3">
+  <div class="col-12 col-sm-6 col-md-3 mb-3 mb-md-0">
     <div class="card">
       <div class="card-body text-center">
         <h4 class="text-primary">{{ active_count }}</h4>
@@ -26,7 +26,7 @@
       </div>
     </div>
   </div>
-  <div class="col-md-3">
+  <div class="col-12 col-sm-6 col-md-3 mb-3 mb-md-0">
     <div class="card">
       <div class="card-body text-center">
         <h4 class="text-warning">{{ paused_count }}</h4>
@@ -34,7 +34,7 @@
       </div>
     </div>
   </div>
-  <div class="col-md-3">
+  <div class="col-12 col-sm-6 col-md-3 mb-3 mb-md-0">
     <div class="card">
       <div class="card-body text-center">
         <h4 class="text-info">{{ pending_this_week }}</h4>
@@ -42,7 +42,7 @@
       </div>
     </div>
   </div>
-  <div class="col-md-3">
+  <div class="col-12 col-sm-6 col-md-3 mb-3 mb-md-0">
     <div class="card">
       <div class="card-body text-center">
         <h4 class="text-success">{{ todays_orders|length }}</h4>
@@ -192,24 +192,24 @@
               {% endif %}
             </td>
             <td>
-              <div class="btn-group btn-group-sm" role="group">
+              <div class="d-flex flex-column flex-md-row gap-1">
                 <a
                   href="{{ url_for('standing_orders.view_standing_order', order_id=order.id) }}"
-                  class="btn btn-info"
+                  class="btn btn-sm btn-info"
                   title="View Details"
                 >
                   <i class="bi bi-eye"></i>
                 </a>
                 <a
                   href="{{ url_for('standing_orders.edit_standing_order', order_id=order.id) }}"
-      class="btn btn-dark"
-      title="Edit"
-    >
-      <i class="bi bi-pencil"></i>
-    </a>
+                  class="btn btn-sm btn-dark"
+                  title="Edit"
+                >
+                  <i class="bi bi-pencil"></i>
+                </a>
                 {% if order.status == 'active' %}
                 <button
-                  class="btn btn-warning"
+                  class="btn btn-sm btn-warning"
                   onclick="pauseOrder({{ order.id }})"
                   title="Pause"
                 >
@@ -217,7 +217,7 @@
                 </button>
                 {% elif order.status == 'paused' %}
                 <button
-                  class="btn btn-success"
+                  class="btn btn-sm btn-success"
                   onclick="resumeOrder({{ order.id }})"
                   title="Resume"
                 >
@@ -225,7 +225,7 @@
                 </button>
                 {% endif %} {% if order.status != 'ended' %}
                 <button
-                  class="btn btn-danger"
+                  class="btn btn-sm btn-danger"
                   onclick="endOrder({{ order.id }})"
                   title="End"
                 >

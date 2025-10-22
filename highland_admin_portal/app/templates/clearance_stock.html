@@ -1,25 +1,25 @@
 {% extends "base.html" %} {% block content %}
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <div>
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-2 mb-md-4">
+  <div class="mb-2 mb-md-0">
     <h2>Clearance Stock</h2>
     <p class="text-muted">Manage and search clearance stock items</p>
   </div>
-  <div>
+  <div class="d-flex flex-column flex-md-row gap-2">
     {% if current_user.role == 'admin' %}
     <button class="btn btn-info" onclick="showUploadModal()">
-      <i class="bi bi-upload"></i> Upload Excel
+      <i class="bi bi-upload"></i> <span class="d-none d-sm-inline">Upload Excel</span>
     </button>
     {% endif %}
     <button class="btn btn-success" onclick="showAddModal()">
-      <i class="bi bi-plus-circle"></i> Add New Item
+      <i class="bi bi-plus-circle"></i> <span class="d-none d-sm-inline">Add New Item</span>
     </button>
   </div>
 </div>
 
 <!-- Stats Cards -->
 <div class="row mb-4">
-  <div class="col-md-4">
+  <div class="col-12 col-sm-6 col-md-4 mb-3 mb-md-0">
     <div class="card">
       <div class="card-body text-center">
         <h5 class="text-primary" id="totalItems">0</h5>
@@ -27,7 +27,7 @@
       </div>
     </div>
   </div>
-  <div class="col-md-4">
+  <div class="col-12 col-sm-6 col-md-4 mb-3 mb-md-0">
     <div class="card">
       <div class="card-body text-center">
         <h5 class="text-success" id="totalUnits">0</h5>
@@ -35,7 +35,7 @@
       </div>
     </div>
   </div>
-  <div class="col-md-4">
+  <div class="col-12 col-sm-6 col-md-4 mb-3 mb-md-0">
     <div class="card">
       <div class="card-body text-center">
         <h5 class="text-info" id="totalValue">£0.00</h5>
@@ -49,7 +49,7 @@
 <div class="card mb-4">
   <div class="card-body">
     <div class="row">
-      <div class="col-md-6">
+      <div class="col-12 col-md-6 mb-3 mb-md-0">
         <label class="form-label">Search</label>
         <input
           type="text"
@@ -59,7 +59,7 @@
           onkeyup="searchItems()"
         />
       </div>
-      <div class="col-md-6">
+      <div class="col-12 col-md-6 mb-3 mb-md-0">
         <label class="form-label">Filter by Pallet</label>
         <select
           class="form-select"

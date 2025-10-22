@@ -15,20 +15,20 @@
       </div>
 
       <div class="row mb-3">
-        <div class="col-md-4">
+        <div class="col-12 col-md-4 mb-3 mb-md-0">
           <div class="search-container position-relative">
             <label class="form-label">Customer Account Number *</label>
             <input type="text" name="customer_account" class="form-control" placeholder="Start typing account..." required>
             <input type="hidden" name="customer_id" id="customerId">
           </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-12 col-md-4 mb-3 mb-md-0">
           <div class="search-container position-relative">
             <label class="form-label">Customer Name *</label>
             <input type="text" name="customer_name" class="form-control" placeholder="Start typing name..." required>
           </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-12 col-md-4 mb-3 mb-md-0">
           <label class="form-label">Delivery Address</label>
           <input type="text" name="customer_address" class="form-control" placeholder="Address" readonly>
         </div>
@@ -103,21 +103,21 @@
 <template id="productRowTemplate">
   <div class="product-row border rounded p-3 mb-2">
     <div class="row">
-      <div class="col-md-4">
+      <div class="col-12 col-md-4 mb-2 mb-md-0">
         <div class="search-container position-relative">
           <label class="form-label">Product Code *</label>
           <input type="text" class="form-control product-code" placeholder="Start typing product code..." required>
         </div>
       </div>
-      <div class="col-md-5">
+      <div class="col-12 col-md-5 mb-2 mb-md-0">
         <label class="form-label">Product Name *</label>
         <input type="text" class="form-control product-name" placeholder="Product description" required>
       </div>
-      <div class="col-md-2">
+      <div class="col-10 col-md-2 mb-2 mb-md-0">
         <label class="form-label">Quantity *</label>
         <input type="number" class="form-control product-quantity" min="1" placeholder="Qty" required>
       </div>
-      <div class="col-md-1 d-flex align-items-end">
+      <div class="col-2 col-md-1 d-flex align-items-end mb-2 mb-md-0">
         <button type="button" class="btn btn-danger btn-sm" onclick="removeProductRow(this)">
           <i class="bi bi-trash"></i>
         </button>
