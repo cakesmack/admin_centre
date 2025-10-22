@@ -84,6 +84,11 @@ Thumbs.db
 # Claude Code settings (keep local settings private)
 .claude/settings.local.json
 
+# Personal/internal documentation (keep local only)
+PORTFOLIO_CHECKLIST.md
+GIT_COMMIT_SUMMARY.md
+MIGRATE_WITHOUT_KB.md
+
 # Keep these important files
 !.gitignore
 !requirements.txt
