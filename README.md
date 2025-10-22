@@ -1,6 +1,7 @@
 # Highland Hygiene Admin Portal
 
 A comprehensive admin portal for managing customers, orders, callsheets, inventory, and knowledge base for Highland Hygiene & Industrial Supplies.
+<img width="1882" height="876" alt="image" src="https://github.com/user-attachments/assets/267cc6d7-2416-4711-ac64-68fc596cbcd3" />
 
 ## Features
 
